@@ -45,6 +45,10 @@ import {
   compareMigrationVersions,
   isTimestampVersion,
 } from "./migrationRunner/ordering";
+import {
+  getForkMigrationFiles,
+  reconcileForkLegacyMigrations,
+} from "./migrationRunner/forkMigrations";
 import { migrationConsole as console } from "./migrationRunner/logger";
 import {
   createPreMigrationBackup,
@@ -315,7 +319,8 @@ export function getMigrationFiles(): Array<{ version: string; name: string; path
   // string and needs no further change. Empty and filesystem-free when unset. The
   // combined array is NOT re-sorted: the extras keep their declared order after the
   // whole main set, including every timestamped migration.
-  return [...files, ...getExtraMigrationFiles()];
+  // Fork seam: the fork's own `fork-NNN` namespace (see forkMigrations.ts).
+  return [...files, ...getForkMigrationFiles(MIGRATIONS_DIR), ...getExtraMigrationFiles()];
 }
 
 function filterSupersededDuplicateMigrations(
@@ -913,6 +918,8 @@ export function runMigrations(
   ensureMigrationsTable(db);
 
   const files = filterSupersededDuplicateMigrations(getMigrationFiles());
+  // Fork seam: move fork migrations recorded in an upstream slot to `fork-NNN`.
+  reconcileForkLegacyMigrations(db, files);
   validateRequiredPhysicalMigrationProvenance(db, files);
   let preMigrationBackup: PreMigrationBackupReceipt | null = null;
   let plan!: {

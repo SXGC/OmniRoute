@@ -286,6 +286,13 @@ export type PersistAttemptLogsArgs = {
     encryptedSeen: boolean;
     durationMs: number | null;
   } | null;
+  /**
+   * Upstream-declared model observed in the provider's own Responses payload
+   * (see upstreamResponseModel.ts). Callers only pass it when it DIFFERS from
+   * the routed model; null/undefined is dropped by attachLogMeta and the
+   * saveCallLog column write. Log-only: billing is unchanged.
+   */
+  upstreamResponseModel?: string | null;
 };
 
 export type PersistAttemptLogsContext = {
@@ -493,6 +500,7 @@ export function persistAttemptLogs(args: PersistAttemptLogsArgs, ctx: PersistAtt
     geminiPromptCache,
     cacheSource,
     ttft,
+    upstreamResponseModel,
   } = args;
   const {
     traceId,
@@ -667,6 +675,7 @@ export function persistAttemptLogs(args: PersistAttemptLogsArgs, ctx: PersistAtt
     status,
     model,
     requestedModel,
+    upstreamResponseModel: upstreamResponseModel || null,
     provider,
     connectionId: finalConnectionId || undefined,
     duration: Date.now() - startTime,
@@ -709,6 +718,9 @@ export function persistAttemptLogs(args: PersistAttemptLogsArgs, ctx: PersistAtt
             // Operators can tell estimated token counts (and the cost derived from them)
             // apart from provider-reported ones. Log-only: billing is unchanged.
             usageEstimated: isEstimatedUsage(tokens) ? true : null,
+            // Upstream-declared model that differs from the routed one (Responses API
+            // only — see upstreamResponseModel.ts). Log-only: billing is unchanged.
+            upstreamResponseModel: upstreamResponseModel || null,
           })
         ),
     error: retainedError || null,
