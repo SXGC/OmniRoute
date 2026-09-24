@@ -313,6 +313,14 @@ export function ensureCallLogsColumns(db: SqliteDatabase) {
       db.exec("ALTER TABLE call_logs ADD COLUMN resilience_actions TEXT DEFAULT NULL");
       console.log("[DB] Added call_logs.resilience_actions column");
     }
+    // added by fork-001_call_logs_upstream_response_model (fork migration
+    // namespace, see migrationRunner/forkMigrations.ts); back-filled here because
+    // the logs list SELECTs it — a lineage that skipped the migration would
+    // throw "no such column" rather than fail closed.
+    if (!columnNames.has("upstream_response_model")) {
+      db.exec("ALTER TABLE call_logs ADD COLUMN upstream_response_model TEXT DEFAULT NULL");
+      console.log("[DB] Added call_logs.upstream_response_model column");
+    }
 
     db.exec(
       "CREATE INDEX IF NOT EXISTS idx_call_logs_requested_model ON call_logs(requested_model)"

@@ -31,6 +31,7 @@ import {
 
 import { maybeSyncClaudeExtraUsageState } from "../chatCore/telemetryHelpers.ts";
 import { recordFinalInputCalibration } from "./contextEstimation.ts";
+import { extractUpstreamResponseModel, upstreamModelMismatched } from "./upstreamResponseModel.ts";
 
 export {
   shouldUseNativeCodexPassthrough,
@@ -930,6 +931,7 @@ export async function runNonStreamingResponse(deps: NonStreamingDeps) {
     // request). (#3821-review LEDGER-6)
     await saveIdempotency(idempotencyKey, translatedResponse, 200);
     reqLogger.logConvertedResponse(translatedResponse);
+    const nonStreamingUpstreamModel = extractUpstreamResponseModel(responseBody, model);
     persistAttemptLogs({
       status: 200,
       tokens: usage,
@@ -946,6 +948,9 @@ export async function runNonStreamingResponse(deps: NonStreamingDeps) {
       claudeCacheMeta: claudePromptCacheLogMeta,
       claudeCacheUsageMeta: cacheUsageLogMeta,
       cacheSource: "upstream",
+      upstreamResponseModel: upstreamModelMismatched(nonStreamingUpstreamModel, model)
+        ? nonStreamingUpstreamModel
+        : null,
     });
     recordChatCallCost(apiKeyInfo, meteredBudgetCost(provider, estimatedCost), chatCostCtx, true);
 

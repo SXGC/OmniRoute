@@ -95,6 +95,7 @@ type CallLogSummaryRow = {
   status: number | null;
   model: string | null;
   requested_model: string | null;
+  upstream_response_model: string | null;
   provider: string | null;
   account: string | null;
   connection_id: string | null;
@@ -478,6 +479,7 @@ function mapSummaryRow(row: CallLogSummaryRow) {
     status: toNumber(row.status),
     model: row.model,
     requestedModel: applyNodePrefix(row.requested_model, provider, nodePrefix),
+    upstreamResponseModel: row.upstream_response_model ?? null,
     provider,
     providerDisplay: resolveProviderDisplay(provider, nodeName, nodePrefix),
     account: row.resolved_account || row.account,
@@ -700,6 +702,10 @@ async function saveCallLogOperation(entry: any): Promise<void> {
       errorType,
       model: entry.model || "-",
       requestedModel: resolvedRequestedModel,
+      upstreamResponseModel:
+        typeof entry.upstreamResponseModel === "string" && entry.upstreamResponseModel.trim()
+          ? entry.upstreamResponseModel.trim()
+          : null,
       provider: rawProvider,
       account,
       connectionId: entry.connectionId || null,
@@ -794,7 +800,7 @@ async function saveCallLogOperation(entry: any): Promise<void> {
     const insertStmt = db.prepare(
       `
       INSERT INTO call_logs (
-        id, timestamp, method, path, status, model, requested_model, provider,
+        id, timestamp, method, path, status, model, requested_model, upstream_response_model, provider,
         account, connection_id, duration, ttft_ms, tokens_in, tokens_out,
         tokens_cache_read, tokens_cache_creation, tokens_reasoning, tokens_compressed,
         reasoning_source, reasoning_chars,
@@ -809,7 +815,7 @@ async function saveCallLogOperation(entry: any): Promise<void> {
         added_wait_ms, added_wait_cause${resilienceCol}
       )
       VALUES (
-        @id, @timestamp, @method, @path, @status, @model, @requestedModel, @provider,
+        @id, @timestamp, @method, @path, @status, @model, @requestedModel, @upstreamResponseModel, @provider,
         @account, @connectionId, @duration, @ttftMs, @tokensIn, @tokensOut,
         @tokensCacheRead, @tokensCacheCreation, @tokensReasoning, @tokensCompressed,
         @reasoningSource, @reasoningChars,

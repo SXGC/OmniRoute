@@ -342,6 +342,24 @@ function getCodexAccountRotation(detail) {
   return null;
 }
 
+// Upstream-declared model from the Responses payload that differs from the
+// routed model. Prefers the summary column; falls back to the responseBody
+// _omniroute meta blob (same value, different storage — column is the SQL
+// projection, meta travels with the artifact).
+function getUpstreamResponseModel(detail, log) {
+  const fromColumn =
+    typeof detail?.upstreamResponseModel === "string" && detail.upstreamResponseModel.trim()
+      ? detail.upstreamResponseModel
+      : typeof log?.upstreamResponseModel === "string" && log.upstreamResponseModel.trim()
+        ? log.upstreamResponseModel
+        : null;
+  if (fromColumn) return fromColumn;
+  const meta = detail?.responseBody?._omniroute;
+  return typeof meta?.upstreamResponseModel === "string" && meta.upstreamResponseModel.trim()
+    ? meta.upstreamResponseModel
+    : null;
+}
+
 function formatConnectionId(value) {
   if (typeof value !== "string" || value.length === 0) return "-";
   return value.length > 8 ? `${value.slice(0, 8)}...` : value;
@@ -558,6 +576,7 @@ export default function RequestLoggerDetail({
   );
   const accountLabel = maskAccount(detail?.account || log.account, emailsVisible);
   const codexAccountRotation = getCodexAccountRotation(detail);
+  const upstreamResponseModel = getUpstreamResponseModel(detail, log);
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center px-2 pt-[5vh] sm:px-4"
@@ -823,6 +842,17 @@ export default function RequestLoggerDetail({
                   {t("model")}
                 </div>
                 <div className="text-sm font-medium text-primary font-mono">{log.model}</div>
+                {upstreamResponseModel && (
+                  <div
+                    className="mt-1 text-[10px] text-red-600 dark:text-red-400 font-mono"
+                    title={t("upstreamModelTitle", {
+                      upstream: upstreamResponseModel,
+                      routed: log.model,
+                    })}
+                  >
+                    {t("upstreamActual", { model: upstreamResponseModel })}
+                  </div>
+                )}
               </div>
               <div>
                 <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1">
