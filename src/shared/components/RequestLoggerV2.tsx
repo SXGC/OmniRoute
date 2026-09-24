@@ -153,6 +153,7 @@ const RequestLoggerV2 = forwardRef<RequestLoggerV2Handle, RequestLoggerV2Initial
         { key: "cacheSource", label: t("columns.cacheSource") },
         { key: "model", label: t("columns.model") },
         { key: "requestedModel", label: t("columns.requested") },
+        { key: "upstreamModel", label: t("columns.upstreamModel") },
         { key: "provider", label: t("columns.provider") },
         { key: "protocol", label: t("columns.protocol") },
         { key: "account", label: t("columns.account") },
@@ -1325,6 +1326,9 @@ const RequestLoggerV2 = forwardRef<RequestLoggerV2Handle, RequestLoggerV2Initial
                   {visibleColumns.requestedModel && (
                     <TableHead className="px-3">{t("columns.requested")}</TableHead>
                   )}
+                  {visibleColumns.upstreamModel && (
+                    <TableHead className="px-3">{t("columns.upstreamModel")}</TableHead>
+                  )}
                   {visibleColumns.provider && (
                     <TableHead className="px-3">{t("columns.provider")}</TableHead>
                   )}
@@ -1567,6 +1571,23 @@ const RequestLoggerV2 = forwardRef<RequestLoggerV2Handle, RequestLoggerV2Initial
                               }
                             >
                               {log.requestedModel}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-text-muted">—</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {visibleColumns.upstreamModel && (
+                        <TableCell className="px-3 py-2 font-mono text-[11px]">
+                          {log.upstreamResponseModel ? (
+                            <span
+                              className="font-medium text-red-600 dark:text-red-400"
+                              title={t("upstreamModelTitle", {
+                                upstream: log.upstreamResponseModel,
+                                routed: log.model,
+                              })}
+                            >
+                              {log.upstreamResponseModel}
                             </span>
                           ) : (
                             <span className="text-[10px] text-text-muted">—</span>

@@ -18,6 +18,7 @@ import { requestTtftMs, streamEmittedOutput } from "../../utils/streamTiming.ts"
 import { readStreamPartialUsage } from "../../utils/streamPartialUsage.ts";
 import { clearPostOutputFailureStreak } from "../../services/accountFallback/postOutputFailureStreak.ts";
 import { FORMATS } from "../../translator/formats.ts";
+import { extractUpstreamResponseModel, upstreamModelMismatched } from "./upstreamResponseModel.ts";
 import { needsTranslation } from "../../translator/index.ts";
 import { runEmptyTurnRetryLoop } from "./emptyTurnRetryLoop.ts";
 import { buildErrorBody } from "../../utils/error.ts";
@@ -562,6 +563,11 @@ export async function runStreamingTail(deps: StreamingTailDeps) {
       calculateCost,
     });
 
+    // Upstream-declared model from the Responses summary (log-only; see
+    // upstreamResponseModel.ts). Only attached when it differs from the routed
+    // model, so attachLogMeta drops the null case entirely.
+    const upstreamResponseModel = extractUpstreamResponseModel(providerPayload, model);
+
     persistAttemptLogs({
       upstreamHttpSelection,
       status: normalizedStreamStatus,
@@ -581,6 +587,9 @@ export async function runStreamingTail(deps: StreamingTailDeps) {
       // generation-time TPS instead of wall-clock TPS.
       ttft,
       reasoningMeta: streamReasoningMeta ?? null,
+      upstreamResponseModel: upstreamModelMismatched(upstreamResponseModel, model)
+        ? upstreamResponseModel
+        : null,
     });
 
     recordStreamingCost({
