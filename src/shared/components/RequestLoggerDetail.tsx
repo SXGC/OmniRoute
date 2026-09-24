@@ -362,6 +362,24 @@ function getCodexAccountRotation(detail) {
   return null;
 }
 
+// Upstream-declared model from the Responses payload that differs from the
+// routed model. Prefers the summary column; falls back to the responseBody
+// _omniroute meta blob (same value, different storage — column is the SQL
+// projection, meta travels with the artifact).
+function getUpstreamResponseModel(detail, log) {
+  const fromColumn =
+    typeof detail?.upstreamResponseModel === "string" && detail.upstreamResponseModel.trim()
+      ? detail.upstreamResponseModel
+      : typeof log?.upstreamResponseModel === "string" && log.upstreamResponseModel.trim()
+        ? log.upstreamResponseModel
+        : null;
+  if (fromColumn) return fromColumn;
+  const meta = detail?.responseBody?._omniroute;
+  return typeof meta?.upstreamResponseModel === "string" && meta.upstreamResponseModel.trim()
+    ? meta.upstreamResponseModel
+    : null;
+}
+
 function formatConnectionId(value) {
   if (typeof value !== "string" || value.length === 0) return "-";
   return value.length > 8 ? `${value.slice(0, 8)}...` : value;
@@ -564,6 +582,7 @@ export function RequestLoggerDetailPanel({
   );
   const accountLabel = maskAccount(detail?.account || log.account, emailsVisible);
   const codexAccountRotation = getCodexAccountRotation(detail);
+  const upstreamResponseModel = getUpstreamResponseModel(detail, log);
   // A tab shows only when its section has something to show. While the next request loads its
   // sections are unknown, so the open tab stays put instead of jumping to the overview and back.
   const hasConversation = useMemo(() => hasConversationTurns(detail), [detail]);
@@ -861,6 +880,17 @@ export function RequestLoggerDetailPanel({
                 {t("model")}
               </div>
               <div className="text-sm font-medium text-primary font-mono">{log.model}</div>
+              {upstreamResponseModel && (
+                <div
+                  className="mt-1 text-[10px] text-red-600 dark:text-red-400 font-mono"
+                  title={t("upstreamModelTitle", {
+                    upstream: upstreamResponseModel,
+                    routed: log.model,
+                  })}
+                >
+                  {t("upstreamActual", { model: upstreamResponseModel })}
+                </div>
+              )}
             </div>
             <div>
               <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1">
