@@ -487,3 +487,142 @@ test("provider window costs aggregate many usage rows in SQL without per-row sca
   assert.equal(result.rows[0].models.length, 1);
   assert.equal(result.rows[0].models[0].requests, 250);
 });
+
+test("Codex session key with a 7-day window is the weekly USD window", async () => {
+  await localDb.updatePricing({
+    codex: {
+      "gpt-5.5": { input: 10, output: 20, cached: 1, cache_creation: 5, reasoning: 30 },
+    },
+  });
+
+  const key = await apiKeys.createApiKey("Codex Session Weekly", "machine-codex-session-weekly");
+  providerLimits.setProviderLimitsCache("codex-session-weekly", {
+    quotas: {
+      session: {
+        used: 20,
+        total: 100,
+        remaining: 80,
+        resetAt: "2026-07-02T23:00:00.000Z",
+        windowSeconds: 604_800,
+        displayName: "Weekly",
+      },
+    },
+    plan: "Pro",
+    message: null,
+    fetchedAt: "2026-06-28T12:00:00.000Z",
+  });
+
+  await usageHistory.saveRequestUsage({
+    provider: "codex",
+    model: "gpt-5.5",
+    connectionId: "codex-session-weekly",
+    apiKeyId: key.id,
+    apiKeyName: "Codex Session Weekly",
+    tokens: { input: 1_000_000, output: 0 },
+    timestamp: "2026-06-26T00:00:00.000Z",
+  });
+
+  const result = await getProviderWindowCostBreakdown({
+    provider: "codex",
+    connectionId: "codex-session-weekly",
+    now: Date.parse("2026-06-28T12:00:00.000Z"),
+  });
+
+  assert.equal(result.windowSource, "provider_weekly_reset");
+  assert.equal(result.quotaName, "Weekly");
+  assert.equal(result.quotaUsedPercent, 20);
+  assert.equal(result.windowResetAt, "2026-07-02T23:00:00.000Z");
+  assert.equal(result.totalCostUsd, 10);
+  assert.equal(result.estimatedFullQuotaUsd, 50);
+});
+
+test("Codex session key with a 5-hour window stays on the rolling fallback", async () => {
+  providerLimits.setProviderLimitsCache("codex-session-short", {
+    quotas: {
+      session: {
+        used: 10,
+        total: 100,
+        remaining: 90,
+        resetAt: "2026-06-28T16:00:00.000Z",
+        windowSeconds: 18_000,
+        displayName: "Session",
+      },
+    },
+    plan: "Pro",
+    message: null,
+    fetchedAt: "2026-06-28T12:00:00.000Z",
+  });
+
+  const result = await getProviderWindowCostBreakdown({
+    provider: "codex",
+    connectionId: "codex-session-short",
+    now: Date.parse("2026-06-28T12:00:00.000Z"),
+  });
+
+  assert.equal(result.windowSource, "fallback_rolling_7d");
+  assert.equal(result.quotaUsedPercent, null);
+  assert.equal(result.estimatedFullQuotaUsd, null);
+  assert.equal(result.windowResetAt, null);
+});
+
+test("named weekly quota still beats a duration-inferred session window", async () => {
+  providerLimits.setProviderLimitsCache("codex-both-windows", {
+    quotas: {
+      session: {
+        used: 50,
+        total: 100,
+        remaining: 50,
+        resetAt: "2026-06-28T16:00:00.000Z",
+        windowSeconds: 18_000,
+      },
+      weekly: {
+        used: 13,
+        total: 100,
+        remaining: 87,
+        resetAt: "2026-07-02T23:00:00.000Z",
+        windowSeconds: 604_800,
+      },
+    },
+    plan: "Plus",
+    message: null,
+    fetchedAt: "2026-06-28T12:00:00.000Z",
+  });
+
+  const result = await getProviderWindowCostBreakdown({
+    provider: "codex",
+    connectionId: "codex-both-windows",
+    now: Date.parse("2026-06-28T12:00:00.000Z"),
+  });
+
+  assert.equal(result.windowSource, "provider_weekly_reset");
+  assert.equal(result.quotaName, "weekly");
+  assert.equal(result.quotaUsedPercent, 13);
+  assert.equal(result.windowResetAt, "2026-07-02T23:00:00.000Z");
+});
+
+test("Codex session key uses displayName Weekly when window seconds are missing", async () => {
+  providerLimits.setProviderLimitsCache("codex-session-displayname", {
+    quotas: {
+      session: {
+        used: 25,
+        total: 100,
+        remaining: 75,
+        resetAt: "2026-07-02T23:00:00.000Z",
+        displayName: "Weekly",
+      },
+    },
+    plan: "Pro",
+    message: null,
+    fetchedAt: "2026-06-28T12:00:00.000Z",
+  });
+
+  const result = await getProviderWindowCostBreakdown({
+    provider: "codex",
+    connectionId: "codex-session-displayname",
+    now: Date.parse("2026-06-28T12:00:00.000Z"),
+  });
+
+  assert.equal(result.windowSource, "provider_weekly_reset");
+  assert.equal(result.quotaName, "Weekly");
+  assert.equal(result.quotaUsedPercent, 25);
+});

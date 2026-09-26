@@ -1,0 +1,1 @@
+- **fix(usage):** Treat a Codex `session` quota whose real window is 7 days as the weekly window in the USD cost modal, so used percent and the 100% estimate are no longer n/a.
