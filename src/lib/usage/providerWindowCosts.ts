@@ -12,8 +12,12 @@ import { getDbInstance } from "@/lib/db/core";
 import { getAllProviderLimitsCache, getProviderLimitsCache } from "@/lib/db/providerLimits";
 import { getProviderQuotaWindowStart } from "@/lib/db/quotaResetEvents";
 import { calculateCost } from "@/lib/usage/costCalculator";
+import { inferWindowFamilyLabel } from "@omniroute/open-sse/services/quotaWindowLabel.ts";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+// Below every named weekly score (those start at 10 and only subtract model
+// penalties). A duration-inferred window wins only when no named weekly exists.
+const DURATION_INFERRED_WEEKLY_SCORE = -1000;
 const RECORDED_COST_MATCH_TOLERANCE_MS = 30_000;
 
 type JsonRecord = Record<string, unknown>;
@@ -183,9 +187,19 @@ function getRemainingPercent(quota: JsonRecord): number | null {
   return null;
 }
 
-function scoreWeeklyQuota(name: string): number {
+function isDurationWeeklyQuota(quota: JsonRecord): boolean {
+  const seconds = toNumber(quota.windowSeconds, Number.NaN);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return inferWindowFamilyLabel(seconds) === "Weekly";
+  }
+  return toString(quota.displayName).toLowerCase() === "weekly";
+}
+
+function scoreWeeklyQuota(name: string, quota: JsonRecord): number {
   const normalized = name.trim().toLowerCase();
-  if (!normalized.includes("weekly") && !normalized.includes("7d")) return Number.NEGATIVE_INFINITY;
+  if (!normalized.includes("weekly") && !normalized.includes("7d")) {
+    return isDurationWeeklyQuota(quota) ? DURATION_INFERRED_WEEKLY_SCORE : Number.NEGATIVE_INFINITY;
+  }
 
   let score = 10;
   if (normalized === "weekly" || /^weekly\s*\(/.test(normalized)) score += 100;
@@ -224,9 +238,9 @@ function selectWeeklyWindow(
   for (const [entryConnectionId, cache] of cacheEntries) {
     const quotas = toRecord(cache?.quotas);
     for (const [name, rawQuota] of Object.entries(quotas)) {
-      const score = scoreWeeklyQuota(name);
-      if (!Number.isFinite(score)) continue;
       const quota = toRecord(rawQuota);
+      const score = scoreWeeklyQuota(name, quota);
+      if (!Number.isFinite(score)) continue;
       const resetMs = parseResetAt(quota.resetAt, nowMs);
       if (resetMs === null) continue;
       const remainingPercent = getRemainingPercent(quota);
@@ -241,7 +255,7 @@ function selectWeeklyWindow(
           score,
           connectionId: entryConnectionId,
           resetMs,
-          quotaName: name,
+          quotaName: toString(quota.displayName) || name,
           quotaUsedPercent: usedPercent,
           quotaRemainingPercent: remainingPercent,
         };
