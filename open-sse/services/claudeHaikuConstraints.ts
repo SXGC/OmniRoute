@@ -10,6 +10,13 @@ type JsonRecord = Record<string, unknown>;
 // Haiku 5.5; sending `enabled` to those is a hard 400 from the Messages API.
 const HAIKU_CONSTRAINT_PATTERN = /haiku/i;
 
+// Haiku 5+ (e.g. `claude-haiku-5-5`) is the opposite: it accepts ONLY
+// `thinking.type:"adaptive"` and 400s on `"enabled"`. The major version follows
+// the family name (`haiku-5-5`, `haiku-5.5`); legacy names put it before
+// (`claude-3-5-haiku`) and so never match here.
+const MODERN_HAIKU_PATTERN = /haiku[-_.@ ]?(\d{1,2})(?!\d)/i;
+const MODERN_HAIKU_MIN_MAJOR = 5;
+
 // Default budget when collapsing `thinking.type:"adaptive"` to a manual shape
 // on Haiku. Mirrors the upstream 9router decision (`claude.js`, commit
 // 401d93bd5) — a conservative ~10K budget keeps reasoning enabled without
@@ -25,7 +32,9 @@ function modelRejectsAdaptiveAndEffort(modelId: string | null | undefined): bool
   // Spec is authoritative: an adaptive-only model accepts adaptive+effort, so
   // it is never rejected here regardless of its family name.
   if (isAdaptiveThinkingOnly(modelId)) return false;
-  return HAIKU_CONSTRAINT_PATTERN.test(modelId);
+  if (!HAIKU_CONSTRAINT_PATTERN.test(modelId)) return false;
+  const major = Number(MODERN_HAIKU_PATTERN.exec(modelId)?.[1]);
+  return !(Number.isFinite(major) && major >= MODERN_HAIKU_MIN_MAJOR);
 }
 
 /**
