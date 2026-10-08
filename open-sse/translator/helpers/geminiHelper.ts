@@ -87,6 +87,7 @@ export const GEMINI_UNSUPPORTED_SCHEMA_KEYS = new Set([
   "dependentRequired",
   // Other unsupported keywords
   "title",
+  "discriminator",
   "if",
   "then",
   "else",

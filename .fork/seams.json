@@ -1,6 +1,13 @@
 {
-  "seamBudget": 0,
+  "seamBudget": 1,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
-  "seams": []
+  "seams": [
+    {
+      "path": "open-sse/translator/helpers/geminiHelper.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Strip unsupported discriminator schema metadata before sending Gemini and Antigravity requests."
+    }
+  ]
 }
