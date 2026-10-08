@@ -667,6 +667,35 @@ git switch -c <branch-name> upstream/<default-branch>
 Target that same release branch in the pull request. Stage only the intended files, run the
 focused checks, and use a Conventional Commit message (for example, `docs: slim AGENTS.md`).
 
+### Fork seams
+
+Prefer a fork-owned file or composition before editing a file inherited from upstream. Keep an
+unavoidable upstream-file edit small.
+
+Register every such edit in [`.fork/seams.json`](.fork/seams.json) in the same change:
+
+- `path` is the repository path of the upstream file.
+- `kind` is `B` for a fork-specific edit, or `D` for a generic fix that upstream may later make.
+- `status` is `claimed` while the edit remains.
+- `reason` states the retained behavior in one sentence.
+- `seamBudget` equals the number of claimed entries. Raise it only with explicit operator review.
+- `exemptGlobs` lists generated or index files only. Do not use an exemption to hide an owned edit.
+
+Create the matching note at `.fork/notes/<path>.md`. The note repeats `kind`, `status`, and
+`reason`, then records three sections:
+
+- `改动`: the exact retained edit.
+- `原因`: why upstream behavior cannot remain.
+- `重做`: how to preserve the behavior when resolving a future upstream merge.
+
+A seam entry without its note, or a note without its entry, is incomplete. Remove both together
+when the edit is no longer needed. Do not delete the upstream change while leaving its seam
+record behind.
+
+Merge upstream into this fork. Never merge the fork into upstream, and never resolve a merge by
+taking one whole tree. When upstream provides the retained behavior, accept upstream and retire
+the seam. Keep fork-only behavior in `.fork/notes/`; do not append it to upstream documentation.
+
 ---
 
 ## Environment
