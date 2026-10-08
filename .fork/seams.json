@@ -1,5 +1,5 @@
 {
-  "seamBudget": 1,
+  "seamBudget": 16,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -8,6 +8,96 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Strip unsupported discriminator schema metadata before sending Gemini and Antigravity requests."
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Document the fork-seam rules that every agent must follow before editing an upstream file."
+    },
+    {
+      "path": "open-sse/config/codexInstructions.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Use a one-line Codex default instruction instead of the long CLIProxyAPI Codex CLI prompt."
+    },
+    {
+      "path": "src/lib/usage/providerWindowCosts.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Treat a Codex session quota whose real window is 7 days as the weekly USD-cost window."
+    },
+    {
+      "path": "tests/unit/provider-window-costs.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Pin the duration-inferred Codex weekly window behavior with regression tests."
+    },
+    {
+      "path": "src/lib/db/migrationRunner.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Load fork migrations from migrations/fork/ as fork-NNN and move legacy fork ledger rows out of upstream slots."
+    },
+    {
+      "path": "src/lib/db/schemaColumns.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Back-fill call_logs.upstream_response_model for databases that skipped the fork migration."
+    },
+    {
+      "path": "src/lib/usage/callLogs.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Persist and return the upstream-declared response model on call logs."
+    },
+    {
+      "path": "open-sse/handlers/chatCore/attemptLogging.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Carry the upstream-declared response model from chat attempts into call logs and log meta."
+    },
+    {
+      "path": "open-sse/handlers/chatCore/nonStreamingResponse.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Record the upstream-declared model on the non-streaming success log."
+    },
+    {
+      "path": "open-sse/handlers/chatCore/streamingTail.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Record the upstream-declared model on the streaming completion log."
+    },
+    {
+      "path": "src/shared/components/RequestLoggerV2.tsx",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Show an Upstream Model column in the request log table."
+    },
+    {
+      "path": "src/shared/components/RequestLoggerDetail.tsx",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Show the upstream-declared model under the routed model in request log details."
+    },
+    {
+      "path": "src/i18n/messages/en.json",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Add request-logger strings for the upstream-declared model."
+    },
+    {
+      "path": "src/i18n/messages/zh-CN.json",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Add request-logger strings for the upstream-declared model."
+    },
+    {
+      "path": "src/i18n/messages/zh-TW.json",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Add request-logger strings for the upstream-declared model."
     }
   ]
 }
