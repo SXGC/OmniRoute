@@ -1,5 +1,5 @@
 {
-  "seamBudget": 16,
+  "seamBudget": 17,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -8,6 +8,12 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Strip unsupported discriminator schema metadata before sending Gemini and Antigravity requests."
+    },
+    {
+      "path": ".gitignore",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Track fork-owned agent skills under .agents/ instead of ignoring the whole directory."
     },
     {
       "path": "AGENTS.md",
