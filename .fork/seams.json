@@ -1,5 +1,5 @@
 {
-  "seamBudget": 17,
+  "seamBudget": 18,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -104,6 +104,12 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Add request-logger strings for the upstream-declared model."
+    },
+    {
+      "path": "open-sse/executors/default.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Forward the client's anthropic-workspace-id fill-gap style to upstreams whose effective protocol is Anthropic, so org-scoped API keys stop failing with 400."
     }
   ]
 }
