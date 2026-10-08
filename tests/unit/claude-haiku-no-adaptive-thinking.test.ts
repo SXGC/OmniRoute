@@ -52,6 +52,23 @@ describe("normalizeClaudeHaikuConstraints", () => {
     assert.equal((out as Record<string, unknown>).output_config, undefined);
   });
 
+  it("is a no-op for Haiku 5+ (adaptive-only, rejects 'enabled')", () => {
+    for (const model of ["claude-haiku-5-5", "anthropic/claude-haiku-5-5", "claude-haiku-5.5"]) {
+      const input = {
+        model,
+        thinking: { type: "adaptive", display: "summarized" },
+        output_config: { effort: "high" },
+      };
+      assert.strictEqual(normalizeClaudeHaikuConstraints(input, model), input, model);
+    }
+  });
+
+  it("still rewrites legacy haiku names with the version before the family", () => {
+    const input = { model: "claude-3-5-haiku-20241022", thinking: { type: "adaptive" } };
+    const out = normalizeClaudeHaikuConstraints(input, input.model);
+    assert.deepEqual(out.thinking, { type: "enabled", budget_tokens: 10000 });
+  });
+
   it("is a no-op for Sonnet (adaptive is valid there)", () => {
     const input = {
       model: "claude-sonnet-4-5",
