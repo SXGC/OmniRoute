@@ -217,6 +217,30 @@ function applyCustomHeaders(headers: Record<string, string>, rawCustomHeaders: u
   }
 }
 
+/**
+ * Forward the client's `anthropic-workspace-id` to Anthropic-shaped upstreams.
+ * Anthropic rejects org-scoped API keys that arrive without it ("This API key
+ * is not scoped to a workspace"), and the header sits on none of the
+ * client-header forwarding allowlists. Fill-gap only: a connection
+ * `customHeaders` / executor-set value always wins over the client's.
+ */
+function forwardClientAnthropicWorkspaceId(
+  headers: Record<string, string>,
+  clientHeaders: Record<string, string> | null | undefined
+): void {
+  if (!clientHeaders) return;
+  const clientValue = Object.entries(clientHeaders).find(
+    ([key]) => key.toLowerCase() === "anthropic-workspace-id"
+  )?.[1];
+  if (!clientValue) return;
+  const alreadySet = Object.keys(headers).some(
+    (key) => key.toLowerCase() === "anthropic-workspace-id"
+  );
+  if (!alreadySet) {
+    headers["anthropic-workspace-id"] = clientValue;
+  }
+}
+
 export class DefaultExecutor extends BaseExecutor {
   constructor(provider) {
     super(provider, PROVIDERS[provider] || PROVIDERS.openai);
@@ -621,6 +645,7 @@ export class DefaultExecutor extends BaseExecutor {
           // CC nodes are also anthropic-compatible-*, so honor operator custom
           // headers here (the early return skips the shared block below).
           applyCustomHeaders(ccHeaders, credentials.providerSpecificData?.customHeaders);
+          forwardClientAnthropicWorkspaceId(ccHeaders, clientHeaders);
           return ccHeaders;
         }
         if (this.provider?.startsWith?.("anthropic-compatible-")) {
@@ -703,6 +728,25 @@ export class DefaultExecutor extends BaseExecutor {
         model,
         body,
       });
+
+      // Org-scoped Anthropic API keys need the client's workspace id upstream.
+      // Gate on the connection's EFFECTIVE Anthropic protocol, not just
+      // provider identity: providers with a CC wire image (e.g. agentrouter)
+      // can be switched to an OpenAI alternate format per connection, and the
+      // header must not leak there.
+      const anthropicShapedProvider =
+        this.provider === "claude" ||
+        this.provider === "anthropic" ||
+        this.provider?.startsWith?.("anthropic-compatible-") === true;
+      const alternateFormat = this.resolveAlternate(credentials)?.format;
+      const targetsAnthropic =
+        this.usesClaudeCodeProtocol(credentials) ||
+        (anthropicShapedProvider &&
+          alternateFormat !== "openai" &&
+          alternateFormat !== "openai-responses");
+      if (targetsAnthropic) {
+        forwardClientAnthropicWorkspaceId(headers, clientHeaders);
+      }
     }
 
     maybeAppendSkillsBeta(headers, this.provider, body, this.usesClaudeCodeProtocol(credentials));
