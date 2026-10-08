@@ -1,10 +1,17 @@
 type JsonRecord = Record<string, unknown>;
 
 // Models that reject `thinking.type:"adaptive"` and `output_config.effort` —
-// today, all Claude Haiku-tier models (4.5 / 3.5 / dated and aliased). Adaptive
+// legacy Claude Haiku-tier models (3.x / 4.x, dated and aliased). Haiku 5+ is excluded: it requires adaptive thinking. Adaptive
 // thinking + the effort knob landed on Sonnet 4.6 / Opus 4.5+ only; sending
 // either on Haiku is a hard 400 from the Messages API.
 const HAIKU_CONSTRAINT_PATTERN = /haiku/i;
+
+// Haiku 5+ (e.g. `claude-haiku-5-5`) is the opposite: it accepts ONLY
+// `thinking.type:"adaptive"` and 400s on `"enabled"`. The major version follows
+// the family name (`haiku-5-5`, `haiku-5.5`); legacy names put it before
+// (`claude-3-5-haiku`) and so never match here.
+const MODERN_HAIKU_PATTERN = /haiku[-_.@ ]?(\d{1,2})(?!\d)/i;
+const MODERN_HAIKU_MIN_MAJOR = 5;
 
 // Default budget when collapsing `thinking.type:"adaptive"` to a manual shape
 // on Haiku. Mirrors the upstream 9router decision (`claude.js`, commit
@@ -18,7 +25,9 @@ function asRecord(value: unknown): JsonRecord | null {
 
 function modelRejectsAdaptiveAndEffort(modelId: string | null | undefined): boolean {
   if (typeof modelId !== "string" || modelId.length === 0) return false;
-  return HAIKU_CONSTRAINT_PATTERN.test(modelId);
+  if (!HAIKU_CONSTRAINT_PATTERN.test(modelId)) return false;
+  const major = Number(MODERN_HAIKU_PATTERN.exec(modelId)?.[1]);
+  return !(Number.isFinite(major) && major >= MODERN_HAIKU_MIN_MAJOR);
 }
 
 /**
