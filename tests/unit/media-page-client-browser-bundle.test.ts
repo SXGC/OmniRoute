@@ -21,6 +21,10 @@ async function assertBrowserBundleSafe(relativePath: string) {
   );
 }
 
+test("static image provider catalog stays browser-bundle safe", async () => {
+  await assertBrowserBundleSafe("../../open-sse/config/imageProviderCatalog.ts");
+});
+
 test("media page client entry stays browser-bundle safe", async () => {
   await assertBrowserBundleSafe(
     "../../src/app/(dashboard)/dashboard/cache/media/MediaPageClient.tsx"

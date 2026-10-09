@@ -1,5 +1,5 @@
 {
-  "seamBudget": 18,
+  "seamBudget": 22,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -110,6 +110,30 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Forward the client's anthropic-workspace-id fill-gap style to upstreams whose effective protocol is Anthropic, so org-scoped API keys stop failing with 400."
+    },
+    {
+      "path": "open-sse/config/imageRegistry.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Separate the static image catalog from database-backed runtime image routing."
+    },
+    {
+      "path": "open-sse/config/mediaServiceKinds.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Keep dashboard service-kind derivation on the browser-safe static image catalog."
+    },
+    {
+      "path": "src/app/(dashboard)/dashboard/cache/media/MediaPageClient.tsx",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Prevent the media dashboard client from importing database-backed image routing."
+    },
+    {
+      "path": "tests/unit/media-page-client-browser-bundle.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Guard the extracted static image catalog against server-only browser dependencies."
     }
   ]
 }
