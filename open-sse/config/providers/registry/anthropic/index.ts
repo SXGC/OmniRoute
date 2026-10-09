@@ -1,5 +1,5 @@
 import type { RegistryEntry } from "../../shared.ts";
-import { ANTHROPIC_BETA_API_KEY, ANTHROPIC_VERSION_HEADER } from "../../shared.ts";
+import { ANTHROPIC_VERSION_HEADER } from "../../shared.ts";
 
 export const anthropicProvider: RegistryEntry = {
   id: "anthropic",
@@ -7,13 +7,11 @@ export const anthropicProvider: RegistryEntry = {
   format: "claude",
   executor: "default",
   baseUrl: "https://api.anthropic.com/v1/messages",
-  urlSuffix: "?beta=true",
   authType: "apikey",
   authHeader: "x-api-key",
   defaultContextLength: 200000,
   headers: {
     "Anthropic-Version": ANTHROPIC_VERSION_HEADER,
-    "Anthropic-Beta": ANTHROPIC_BETA_API_KEY,
   },
   models: [
     {

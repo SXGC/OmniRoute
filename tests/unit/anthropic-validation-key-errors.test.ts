@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 const { validateProviderApiKey } = await import("../../src/lib/providers/validation.ts");
 
 const originalFetch = globalThis.fetch;
-const PROBE_URL = "https://api.anthropic.com/v1/messages?beta=true";
+const PROBE_URL = "https://api.anthropic.com/v1/messages";
 const KEY = "sk-ant-api-key-fixture";
 
 test.afterEach(() => {

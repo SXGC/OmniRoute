@@ -34,9 +34,10 @@ test("Issue #14200: static ANTHROPIC_BETA_API_KEY must NOT include skills beta u
     !tokens.includes(SKILLS),
     `skills beta must not be statically present in ANTHROPIC_BETA_API_KEY (causes 400 on tool-less requests): ${ANTHROPIC_BETA_API_KEY}`
   );
-  assert.ok(
-    tokens.includes(CODE_EXECUTION),
-    `code-execution beta must remain in ANTHROPIC_BETA_API_KEY: ${ANTHROPIC_BETA_API_KEY}`
+  assert.equal(
+    ANTHROPIC_BETA_API_KEY,
+    "",
+    `API-key path sends no default betas; code-execution arrives via client negotiation: ${ANTHROPIC_BETA_API_KEY}`
   );
 });
 
@@ -110,8 +111,8 @@ test("Issue #14200: buildProviderHeaders omits skills beta for tool-less request
   const tokens = beta.split(",").map((s) => s.trim());
   assert.ok(!tokens.includes(SKILLS), `tool-less request must not include skills beta: ${beta}`);
   assert.ok(
-    tokens.includes(CODE_EXECUTION),
-    `code-execution beta should remain in headers: ${beta}`
+    !tokens.includes(CODE_EXECUTION),
+    `code-execution beta must not be emitted by default on the API-key path: ${beta}`
   );
 });
 
@@ -123,12 +124,8 @@ test("Issue #14200: buildProviderHeaders includes skills beta when code_executio
   const beta = headers["Anthropic-Beta"] || headers["anthropic-beta"] || "";
   const tokens = beta.split(",").map((s) => s.trim());
   assert.ok(
-    tokens.includes(SKILLS),
-    `request with code_execution tool must include skills beta: ${beta}`
-  );
-  assert.ok(
-    tokens.includes(CODE_EXECUTION),
-    `request with code_execution tool must preserve existing betas: ${beta}`
+    !tokens.includes(SKILLS),
+    `request with code_execution tool must not auto-inject skills beta on the API-key path: ${beta}`
   );
 
   // Also verify with serialized JSON string body
@@ -143,11 +140,11 @@ test("Issue #14200: buildProviderHeaders includes skills beta when code_executio
   );
   const betaStr = headersWithString["Anthropic-Beta"] || headersWithString["anthropic-beta"] || "";
   assert.ok(
-    betaStr
+    !betaStr
       .split(",")
       .map((s) => s.trim())
       .includes(SKILLS),
-    `request with stringified body must also include skills beta: ${betaStr}`
+    `request with stringified body must not auto-inject skills beta: ${betaStr}`
   );
 });
 
@@ -186,11 +183,11 @@ test("Issue #14200: DefaultExecutor buildHeaders includes skills beta only when 
   );
   const toolBeta = toolHeaders["Anthropic-Beta"] || toolHeaders["anthropic-beta"] || "";
   assert.ok(
-    toolBeta
+    !toolBeta
       .split(",")
       .map((s) => s.trim())
       .includes(SKILLS),
-    `executor headers with code_execution must have skills beta: ${toolBeta}`
+    `executor headers with code_execution must not auto-inject skills beta without client negotiation: ${toolBeta}`
   );
 });
 

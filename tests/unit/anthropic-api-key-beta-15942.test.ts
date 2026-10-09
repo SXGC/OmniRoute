@@ -30,7 +30,8 @@ for (const stream of [false, true]) {
       { apiKey: "fixture-api-key" },
       stream
     );
-    const betas = tokens(readHeader(headers, "anthropic-beta"));
+    assert.equal(new Headers(headers).get("anthropic-beta"), null);
+    const betas = tokens(new Headers(headers).get("anthropic-beta") || "");
     assert.equal(betas.has(CC_BETA), false, "plain API-key requests must not claim Claude Code");
     assert.equal(betas.has(OAUTH_BETA), false);
     assert.equal(headers["x-api-key"], "fixture-api-key");
@@ -40,15 +41,8 @@ for (const stream of [false, true]) {
   });
 }
 
-test("#15942 API-key defaults retain functional API betas", () => {
-  const betas = tokens(ANTHROPIC_BETA_API_KEY);
-  for (const value of [
-    "interleaved-thinking-2025-05-14",
-    "context-management-2025-06-27",
-    "code-execution-2025-08-25",
-  ]) {
-    assert.ok(betas.has(value), value);
-  }
+test("#15942 API-key defaults do not inject functional API betas", () => {
+  assert.equal(ANTHROPIC_BETA_API_KEY, "");
 });
 
 test("#15942 full and OAuth beta sets retain their CC and OAuth identity", () => {
