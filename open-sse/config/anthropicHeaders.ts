@@ -34,11 +34,7 @@ const ANTHROPIC_BETA_BASE = Object.freeze([
 const CLAUDE_OAUTH_EXTRA_BETAS = Object.freeze(["fine-grained-tool-streaming-2025-05-14"]);
 
 export const ANTHROPIC_BETA_FULL = ANTHROPIC_BETA_BASE.join(",");
-// Plain API-key requests do not use the Claude Code wire protocol or OAuth.
-// Keep those identity betas in the full/OAuth sets, not in the API defaults.
-export const ANTHROPIC_BETA_API_KEY = ANTHROPIC_BETA_BASE.filter(
-  (beta) => beta !== "oauth-2025-04-20" && beta !== "claude-code-20250219"
-).join(",");
+export const ANTHROPIC_BETA_API_KEY = "";
 export const ANTHROPIC_BETA_CLAUDE_OAUTH = [
   ...ANTHROPIC_BETA_BASE.slice(0, 3),
   ...CLAUDE_OAUTH_EXTRA_BETAS,
@@ -162,12 +158,9 @@ export function maybeAppendSkillsBeta(
   if (!hasCodeExecutionTool(body)) return;
 
   const p = typeof provider === "string" ? provider : "";
+  if (p === "anthropic") return;
   const isAnthropicFamily =
-    p === "anthropic" ||
-    p === "claude" ||
-    p.startsWith("anthropic-compatible-") ||
-    usesCcWireImage(p) ||
-    extraCondition;
+    p === "claude" || p.startsWith("anthropic-compatible-") || usesCcWireImage(p) || extraCondition;
 
   if (isAnthropicFamily) {
     appendAnthropicBetaHeader(headers, SKILLS_BETA_HEADER);
@@ -189,15 +182,12 @@ export function syncSkillsBeta(
   if (!headers || typeof headers !== "object") return;
   const p = typeof provider === "string" ? provider : "";
   const isAnthropicFamily =
-    p === "anthropic" ||
-    p === "claude" ||
-    p.startsWith("anthropic-compatible-") ||
-    usesCcWireImage(p) ||
-    extraCondition;
+    p === "claude" || p.startsWith("anthropic-compatible-") || usesCcWireImage(p) || extraCondition;
 
-  if (!isAnthropicFamily) return;
+  if (!isAnthropicFamily && p !== "anthropic") return;
 
   if (hasCodeExecutionTool(body)) {
+    if (p === "anthropic") return;
     appendAnthropicBetaHeader(headers, SKILLS_BETA_HEADER);
   } else {
     removeAnthropicBetaHeader(headers, SKILLS_BETA_HEADER);
