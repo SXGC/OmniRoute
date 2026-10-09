@@ -1,5 +1,5 @@
 {
-  "seamBudget": 22,
+  "seamBudget": 26,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -109,7 +109,7 @@
       "path": "open-sse/executors/default.ts",
       "kind": "D",
       "status": "claimed",
-      "reason": "Forward the client's anthropic-workspace-id fill-gap style to upstreams whose effective protocol is Anthropic, so org-scoped API keys stop failing with 400."
+      "reason": "Forward the client's anthropic-workspace-id fill-gap style to upstreams whose effective protocol is Anthropic, and seed the client-beta allowlist merge for the direct anthropic provider so org-scoped API keys stop failing and client-negotiated betas survive without a static set."
     },
     {
       "path": "open-sse/config/imageRegistry.ts",
@@ -134,6 +134,30 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Guard the extracted static image catalog against server-only browser dependencies."
+    },
+    {
+      "path": "open-sse/config/anthropicHeaders.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Keep ANTHROPIC_BETA_API_KEY exported but empty and stop auto-injecting the skills beta for the direct anthropic provider, so its API-key path sends no default betas and everything arrives via client allowlist negotiation."
+    },
+    {
+      "path": "open-sse/config/providers/registry/anthropic/index.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Drop the anthropic provider's static Anthropic-Beta header and ?beta=true urlSuffix so the API-key wire shape carries no default betas."
+    },
+    {
+      "path": "tests/unit/probe-9064-code-execution-beta.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Assert the API-key default carries no betas so code-execution arrives only via client negotiation instead of the old static set."
+    },
+    {
+      "path": "tests/unit/issue-14200-anthropic-skills-beta-toolless.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Assert the API-key path never emits code-execution/skills betas by default so the tool-less 400 guard matches the no-default-beta contract."
     }
   ]
 }

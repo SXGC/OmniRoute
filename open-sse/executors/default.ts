@@ -723,8 +723,18 @@ export class DefaultExecutor extends BaseExecutor {
       // combo/fallback can route a request negotiated for a [1m] sibling onto a model
       // that does not qualify (e.g. Haiku), which Anthropic rejects (#10119).
       // `body` gates skills-2025-10-02 on presence of code_execution tool (#14200).
+      // Seeding is gated on the connection's EFFECTIVE Anthropic protocol: if the
+      // provider ever declares an OpenAI alternate format and the connection selects
+      // it, the merged beta must not leak onto the OpenAI wire (same gate shape as
+      // the anthropic-workspace-id forward below).
+      const alternateFormatForBeta = this.resolveAlternate(credentials)?.format;
+      const seedAnthropicBeta =
+        alternateFormatForBeta !== "openai" &&
+        alternateFormatForBeta !== "openai-responses" &&
+        (this.provider === "anthropic" ||
+          this.provider?.startsWith?.("anthropic-compatible-") === true);
       applyClientAnthropicBeta(headers, clientBeta, {
-        seedWhenAbsent: this.provider?.startsWith?.("anthropic-compatible-") === true,
+        seedWhenAbsent: seedAnthropicBeta,
         model,
         body,
       });
