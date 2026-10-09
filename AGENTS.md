@@ -336,6 +336,14 @@ Steps + baseline-freeze check: `docs/ops/WORKTREE_ISOLATION.md` → "Sync-back l
 
 This checkout is the canonical `cheaper-inference/OmniRoute` repository (formerly `diegosouzapw/OmniRoute`; the old name redirects). Keep fork-only deployment and personal automation changes out of upstream PRs. Start upstream work from the active upstream default branch, not `main` (`git fetch upstream && git switch -c <branch-name> upstream/<default-branch>`), target that same release branch in the PR, stage only the intended files, run the focused checks, and use a Conventional Commit message (for example, `docs: slim AGENTS.md`).
 
+### Fork image publishing
+
+Use `omniroute:latest` for local OmniRoute image builds.
+Push releases to `registry.cn-hangzhou.aliyuncs.com/jct_image/omniroute:latest`.
+Do not create version, commit-hash, or temporary release tags unless the operator explicitly requests them.
+After pushing, verify the remote digest matches the local image.
+Retain existing remote tags unless the operator authorizes their deletion.
+
 ### Fork seams
 
 Prefer a fork-owned file or composition before editing a file inherited from upstream. Keep an
