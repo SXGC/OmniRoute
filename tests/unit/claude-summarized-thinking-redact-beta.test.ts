@@ -271,10 +271,10 @@ test("claude API-key dispatch: summarized thinking drops the redact beta without
   });
 });
 
-test("anthropic API-key dispatch: summarized thinking drops the static redact beta", async () => {
+test("anthropic API-key dispatch: adaptive and summarized thinking do not inject a redact beta", async () => {
   delete process.env.OMNIROUTE_REDACT_THINKING;
   const creds = { apiKey: "sk-ant-api-test" };
-  assert.ok((await dispatch("anthropic", creds, body({ type: "adaptive" }))).includes(REDACT));
+  assert.ok(!(await dispatch("anthropic", creds, body({ type: "adaptive" }))).includes(REDACT));
   assert.ok(!(await dispatch("anthropic", creds, body(SUMMARIZED))).includes(REDACT));
 });
 
