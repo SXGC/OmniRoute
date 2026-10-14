@@ -1,8 +1,26 @@
 {
-  "seamBudget": 23,
+  "seamBudget": 27,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
+    {
+      "path": "tests/unit/claude-summarized-thinking-redact-beta.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Assert direct Anthropic API-key thinking requests forward only client-negotiated betas while retaining upstream Claude OAuth behavior."
+    },
+    {
+      "path": "open-sse/services/claudeHaikuConstraints.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Preserve adaptive thinking for Haiku 5+ aliases not yet covered by upstream model specs."
+    },
+    {
+      "path": "tests/unit/claude-haiku-no-adaptive-thinking.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Guard Haiku 5+ adaptive-thinking pass-through for uncatalogued aliases while preserving legacy downgrades."
+    },
     {
       "path": "open-sse/translator/helpers/geminiHelper.ts",
       "kind": "D",
@@ -112,10 +130,16 @@
       "reason": "Forward the client's anthropic-workspace-id fill-gap style to upstreams whose effective protocol is Anthropic, and seed the client-beta allowlist merge for the direct anthropic provider so org-scoped API keys stop failing and client-negotiated betas survive without a static set."
     },
     {
-      "path": "tests/unit/media-page-client-browser-bundle.test.ts",
+      "path": "tests/unit/anthropic-api-key-beta-15942.test.ts",
       "kind": "D",
       "status": "claimed",
-      "reason": "Guard the extracted static image catalog against server-only browser dependencies."
+      "reason": "Keep upstream CC identity safeguards while asserting the fork's empty API-key beta defaults."
+    },
+    {
+      "path": "tests/unit/anthropic-validation-key-errors.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Probe Anthropic key validation at the fork's beta-free Messages endpoint."
     },
     {
       "path": "open-sse/config/anthropicHeaders.ts",
