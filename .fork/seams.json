@@ -1,5 +1,5 @@
 {
-  "seamBudget": 26,
+  "seamBudget": 23,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -110,24 +110,6 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Forward the client's anthropic-workspace-id fill-gap style to upstreams whose effective protocol is Anthropic, and seed the client-beta allowlist merge for the direct anthropic provider so org-scoped API keys stop failing and client-negotiated betas survive without a static set."
-    },
-    {
-      "path": "open-sse/config/imageRegistry.ts",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Separate the static image catalog from database-backed runtime image routing."
-    },
-    {
-      "path": "open-sse/config/mediaServiceKinds.ts",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Keep dashboard service-kind derivation on the browser-safe static image catalog."
-    },
-    {
-      "path": "src/app/(dashboard)/dashboard/cache/media/MediaPageClient.tsx",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Prevent the media dashboard client from importing database-backed image routing."
     },
     {
       "path": "tests/unit/media-page-client-browser-bundle.test.ts",
