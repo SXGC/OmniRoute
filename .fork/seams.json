@@ -1,5 +1,5 @@
 {
-  "seamBudget": 27,
+  "seamBudget": 28,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -164,6 +164,12 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Assert the API-key path never emits code-execution/skills betas by default so the tool-less 400 guard matches the no-default-beta contract."
+    },
+    {
+      "path": "open-sse/executors/cloudflare-ai.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Fill the missing-signature validator skip marker on assistant tool-call history for the exact google/gemini-4-argon model so unsigned replay history stops failing with Cloudflare 400 User Input Error."
     }
   ]
 }
