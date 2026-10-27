@@ -1,4 +1,5 @@
 import { BaseExecutor, type ExecuteInput, type ExecutorExecuteResult } from "./base.ts";
+import { patchCloudflareGeminiToolSignatures } from "./cloudflareGeminiToolSignatures.ts";
 import { PROVIDERS } from "../config/constants.ts";
 
 export type CloudflareProviderSpecificData = {
@@ -174,7 +175,7 @@ export class CloudflareAIExecutor extends BaseExecutor {
   }
 
   transformRequest(
-    _model: string,
+    model: string,
     body: Record<string, unknown>,
     _stream: boolean,
     _credentials: CloudflareCredentials
@@ -212,7 +213,7 @@ export class CloudflareAIExecutor extends BaseExecutor {
         : msg;
     });
 
-    return { ...body, messages };
+    return patchCloudflareGeminiToolSignatures(model, { ...body, messages });
   }
 }
 
