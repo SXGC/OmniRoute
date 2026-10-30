@@ -23,7 +23,7 @@ test("DB subscription flag overrides remain server-side without mutating the sta
   try {
     setFeatureFlagOverride(key, "true");
     assert.equal(getImageProvider("xao")?.authType, "oauth");
-    assert.equal(getImageProvider("gc")?.format, "xai-image");
+    assert.equal(getImageProvider("gc")?.format, "grok-image");
     assert.equal(IMAGE_PROVIDERS["xai-oauth"], undefined);
     assert.equal(IMAGE_PROVIDERS.xai.format, "openai");
 
