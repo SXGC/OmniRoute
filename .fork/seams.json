@@ -1,5 +1,5 @@
 {
-  "seamBudget": 28,
+  "seamBudget": 30,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -170,6 +170,18 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Fill the missing-signature validator skip marker on assistant tool-call history for the exact google/gemini-4-argon model so unsigned replay history stops failing with Cloudflare 400 User Input Error."
+    },
+    {
+      "path": "docs/providers/GITHUB-COPILOT.md",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Add the frontmatter title fumadocs requires so the upstream-added provider doc does not break the Next production build."
+    },
+    {
+      "path": "docs/providers/grok-cli-media.md",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Add the frontmatter title fumadocs requires so the upstream-added provider doc does not break the Next production build."
     }
   ]
 }
