@@ -101,20 +101,17 @@ export function gemini38ThinkingLevelFromBudget(
   return "high";
 }
 
-function clientAskedForThoughts(body: Record<string, unknown>): boolean {
-  return body.includeThoughts === true || body.include_thoughts === true;
-}
-
 /**
  * Gemini 3.8 honors thinkingLevel, not a 3.7 numeric thinkingBudget.
  * Gemini 4+ rejects the numeric budget off-switch, so there it becomes thinkingLevel "low";
  * versions <= 3 keep { thinkingBudget: 0, includeThoughts: false }.
- * Omit includeThoughts unless the client asked - thoughts share maxOutputTokens.
+ * Fork: always request thought summaries so a streaming client sees reasoning
+ * deltas during long thinking instead of an idle stream (see .fork/notes).
  */
 export function gemini38ThinkingConfig(
   model: string,
   budget: number,
-  body: Record<string, unknown>
+  _body: Record<string, unknown>
 ):
   | { thinkingLevel: Gemini38ThinkingLevel; includeThoughts?: boolean }
   | { thinkingBudget: number; includeThoughts: boolean } {
@@ -124,16 +121,10 @@ export function gemini38ThinkingConfig(
     }
     return { thinkingBudget: 0, includeThoughts: false };
   }
-  const thinkingConfig: {
-    thinkingLevel: Gemini38ThinkingLevel;
-    includeThoughts?: boolean;
-  } = {
+  return {
     thinkingLevel: gemini38ThinkingLevelFromBudget(model, budget),
+    includeThoughts: true,
   };
-  if (clientAskedForThoughts(body)) {
-    thinkingConfig.includeThoughts = true;
-  }
-  return thinkingConfig;
 }
 
 type NativeGeminiThinking = { thinkingLevel: GeminiThinkingLevel; includeThoughts: boolean };

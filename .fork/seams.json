@@ -1,5 +1,5 @@
 {
-  "seamBudget": 30,
+  "seamBudget": 32,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -182,6 +182,18 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Add the frontmatter title fumadocs requires so the upstream-added provider doc does not break the Next production build."
+    },
+    {
+      "path": "open-sse/services/thinkingBudget.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Always request Gemini 3.8 thought summaries for a non-zero thinking budget so streaming clients receive reasoning deltas instead of an idle stream during long thinking."
+    },
+    {
+      "path": "tests/unit/gemini-38-thinking-level-output.test.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Assert the fork default that Gemini 3.8 requests carry includeThoughts true unless thinking is switched off."
     }
   ]
 }
