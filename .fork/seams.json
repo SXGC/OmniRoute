@@ -1,5 +1,5 @@
 {
-  "seamBudget": 33,
+  "seamBudget": 34,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -200,6 +200,12 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Use a DeepSeek-issued call_00_ tool-call id in the fixture asserting reasoning_content stays absent, since foreign ids now get the presence placeholder."
+    },
+    {
+      "path": ".github/workflows",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Remove every upstream GitHub Actions workflow so the fork runs no CI/CD."
     }
   ]
 }
