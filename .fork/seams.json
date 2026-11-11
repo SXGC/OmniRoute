@@ -1,5 +1,5 @@
 {
-  "seamBudget": 32,
+  "seamBudget": 29,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -38,12 +38,6 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Document the fork-seam rules that every agent must follow before editing an upstream file."
-    },
-    {
-      "path": "open-sse/config/codexInstructions.ts",
-      "kind": "B",
-      "status": "claimed",
-      "reason": "Use a one-line Codex default instruction instead of the long CLIProxyAPI Codex CLI prompt."
     },
     {
       "path": "src/lib/usage/providerWindowCosts.ts",
@@ -170,18 +164,6 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Fill the missing-signature validator skip marker on assistant tool-call history for the exact google/gemini-4-argon model so unsigned replay history stops failing with Cloudflare 400 User Input Error."
-    },
-    {
-      "path": "docs/providers/GITHUB-COPILOT.md",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Add the frontmatter title fumadocs requires so the upstream-added provider doc does not break the Next production build."
-    },
-    {
-      "path": "docs/providers/grok-cli-media.md",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Add the frontmatter title fumadocs requires so the upstream-added provider doc does not break the Next production build."
     },
     {
       "path": "open-sse/services/thinkingBudget.ts",
