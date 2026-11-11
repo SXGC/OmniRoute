@@ -1019,13 +1019,13 @@ describe("Reasoning Replay Cache — Translator Replay", () => {
             reasoning_content: "",
             tool_calls: [
               {
-                id: "call_empty_rc",
+                id: "call_00_empty_rc",
                 type: "function",
                 function: { name: "read_file", arguments: "{}" },
               },
             ],
           },
-          { role: "tool", tool_call_id: "call_empty_rc", content: "file contents" },
+          { role: "tool", tool_call_id: "call_00_empty_rc", content: "file contents" },
         ],
       },
       false,
