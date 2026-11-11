@@ -1,5 +1,5 @@
 {
-  "seamBudget": 34,
+  "seamBudget": 35,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -206,6 +206,12 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Remove every upstream GitHub Actions workflow so the fork runs no CI/CD."
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Remove the upstream Dependabot config so the fork receives no automated dependency-update PRs."
     }
   ]
 }
