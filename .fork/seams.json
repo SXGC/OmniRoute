@@ -1,5 +1,5 @@
 {
-  "seamBudget": 29,
+  "seamBudget": 33,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -176,6 +176,30 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Assert the fork default that Gemini 3.8 requests carry includeThoughts true unless thinking is switched off."
+    },
+    {
+      "path": "open-sse/translator/index.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Replay the internal reasoning placeholder on assistant tool-call turns sent to native DeepSeek whose tool-call ids DeepSeek did not issue, so a combo fallback mid tool loop no longer 400s on missing reasoning_content."
+    },
+    {
+      "path": "open-sse/utils/reasoningPlaceholder.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Add hasForeignToolCallsRequiringReasoning(), which flags native-DeepSeek tool-call turns whose ids do not match DeepSeek's call_<2 digits>_ format."
+    },
+    {
+      "path": "tests/unit/reasoning-cache.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Use DeepSeek-issued call_00_ tool-call ids in the fixture that tests the DeepSeek-issued path, since foreign ids now get the presence placeholder."
+    },
+    {
+      "path": "tests/unit/tool-request-sanitization.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Use a DeepSeek-issued call_00_ tool-call id in the fixture asserting reasoning_content stays absent, since foreign ids now get the presence placeholder."
     }
   ]
 }

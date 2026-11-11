@@ -18,6 +18,7 @@ import {
 import {
   isInternalReasoningPlaceholder,
   requiresReasoningContentPresence,
+  hasForeignToolCallsRequiringReasoning,
 } from "../utils/reasoningPlaceholder.ts";
 import {
   coerceToolSchemas,
@@ -299,6 +300,10 @@ function replayOpenAIReasoningMessage(
     }
   }
 
+  const needsPresencePlaceholder =
+    requiresReasoningContentPresence(options.provider, options.model) ||
+    hasForeignToolCallsRequiringReasoning(options.provider, toolCalls);
+
   if (options.requiresExplicitReasoningReplay) {
     if (message.reasoning_content === "") delete message.reasoning_content;
     // Presence-enforcing upstreams (opencode console gateways, Xiaomi MiMo)
@@ -307,11 +312,13 @@ function replayOpenAIReasoningMessage(
     // the internal sentinel so the Responses converter still emits the
     // reasoning_text item; the echo coming back is stripped on the way in by
     // isInternalReasoningPlaceholder(), so it never re-poisons cache or
-    // history (#9573). DeepSeek itself accepts an ABSENT field — untouched.
+    // history (#9573). Native DeepSeek accepts an ABSENT field on tool-call turns
+    // it issued itself, but not on foreign ones (e.g. a combo fallback after an
+    // OpenCode-served step) — see hasForeignToolCallsRequiringReasoning().
     if (
       !message.reasoning_content &&
       (hasToolCalls || shouldReplayReasoningOnly) &&
-      requiresReasoningContentPresence(options.provider, options.model)
+      needsPresencePlaceholder
     ) {
       message.reasoning_content = NON_ANTHROPIC_THINKING_PLACEHOLDER;
     }
@@ -319,7 +326,7 @@ function replayOpenAIReasoningMessage(
   }
 
   if ((hasToolCalls || shouldReplayReasoningOnly) && !message.reasoning_content) {
-    if (requiresReasoningContentPresence(options.provider, options.model)) {
+    if (needsPresencePlaceholder) {
       message.reasoning_content = NON_ANTHROPIC_THINKING_PLACEHOLDER;
     } else {
       delete message.reasoning_content;

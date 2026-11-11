@@ -217,10 +217,10 @@ test("translateRequest omits reasoning_content for DeepSeek assistant tool calls
         {
           role: "assistant",
           tool_calls: [
-            { id: "call_1", type: "function", function: { name: "sum", arguments: "{}" } },
+            { id: "call_00_sum1", type: "function", function: { name: "sum", arguments: "{}" } },
           ],
         },
-        { role: "tool", tool_call_id: "call_1", content: "3" },
+        { role: "tool", tool_call_id: "call_00_sum1", content: "3" },
       ],
     },
     false,
