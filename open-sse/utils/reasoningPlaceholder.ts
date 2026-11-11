@@ -57,3 +57,35 @@ export function requiresReasoningContentPresence(provider: unknown, model: unkno
     ["opencode-go", "opencode-zen"].includes(normalizedProvider)
   );
 }
+
+/** Tool-call ids issued by native DeepSeek look like `call_00_<suffix>` (`call_<2 digits>_`). */
+const DEEPSEEK_ISSUED_TOOL_CALL_ID = /^call_\d{2}_/;
+
+/**
+ * Native DeepSeek accepts an ABSENT `reasoning_content` only on assistant
+ * tool-call turns it issued itself. When a combo falls back to it mid tool loop
+ * after another provider (e.g. OpenCode, ids like `call_528d4b5e...`) served the
+ * previous step without reasoning, DeepSeek 400s with "The reasoning_content in
+ * the thinking mode must be passed back to the API". Such turns need the
+ * presence placeholder; DeepSeek-issued turns keep the field absent so the
+ * model does not echo the sentinel (#9573/#9610). A missing or non-string id
+ * is treated as foreign.
+ */
+export function hasForeignToolCallsRequiringReasoning(
+  provider: unknown,
+  toolCalls: unknown
+): boolean {
+  if (
+    String(provider ?? "")
+      .trim()
+      .toLowerCase() !== "deepseek"
+  ) {
+    return false;
+  }
+  if (!Array.isArray(toolCalls)) return false;
+  return toolCalls.some((toolCall) => {
+    const id =
+      toolCall && typeof toolCall === "object" ? (toolCall as { id?: unknown }).id : undefined;
+    return typeof id !== "string" || !DEEPSEEK_ISSUED_TOOL_CALL_ID.test(id);
+  });
+}
