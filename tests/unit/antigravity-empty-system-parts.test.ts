@@ -59,7 +59,8 @@ for (const model of [
   });
 }
 
-test("models outside the Claude and trailing-turn families keep their system text untouched", async () => {
+// Fork: these models get the identity rewrite too (see .fork/notes/open-sse/executors/antigravity.ts.md).
+test("models outside the Claude and trailing-turn families drop empty parts and identity text", async () => {
   const identity = "You are a Claude agent, built on Anthropic's Claude Agent SDK.";
   for (const model of ["gemini-4-argon-high", "gpt-oss-120b-medium"]) {
     const result = await new AntigravityExecutor().transformRequest(
@@ -77,6 +78,6 @@ test("models outside the Claude and trailing-turn families keep their system tex
     if (result instanceof Response) throw new Error("Unexpected Response from transformRequest");
     const parts = (result.request as { systemInstruction: { parts: unknown[] } }).systemInstruction
       .parts;
-    assert.deepEqual(parts, [{ text: identity }], model);
+    assert.deepEqual(parts, [{ text: "" }], model);
   }
 });
