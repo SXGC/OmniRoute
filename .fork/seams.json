@@ -1,5 +1,5 @@
 {
-  "seamBudget": 33,
+  "seamBudget": 35,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -200,6 +200,18 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Remove the upstream Dependabot config so the fork receives no automated dependency-update PRs."
+    },
+    {
+      "path": "open-sse/executors/antigravity.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Strip Codex CLI and DeepSeek Harness identity banners and apply the systemInstruction identity rewrite to Gemini 4 and other non-Claude Antigravity chat models."
+    },
+    {
+      "path": "tests/unit/antigravity-empty-system-parts.test.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Assert the fork behavior that Gemini 4 and other non-Claude Antigravity chat models also get the systemInstruction identity rewrite."
     }
   ]
 }

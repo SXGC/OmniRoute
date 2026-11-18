@@ -336,6 +336,9 @@ const COMPETITIVE_AGENT_PROMPT_PATTERNS: RegExp[] = [
   /\bbuilt on anthropic's claude agent sdk\b[^\n]*/i,
   /\byou are claude code\b[^\n]*/i,
   /\byou are an ai assistant created by anthropic\b[^\n]*/i,
+  // Fork: Codex CLI and DeepSeek Harness banners; only the sentence is removed.
+  /\byou are codex,[^\n]*?\bbased on gpt-?\d+(?:\.\d+)*(?:-[a-z0-9]+)*\.?[ \t]*/i,
+  /\byou are an ai agent powered by deepseek harness\b\.?[ \t]*/i,
 ];
 
 /**
@@ -967,9 +970,12 @@ export class AntigravityExecutor extends BaseExecutor {
         ? stripTrailingAntigravityAssistantTurn(
             normalizeAntigravityGeminiSystemInstruction(rawTransformedRequest)
           )
-        : // Other chat models (gemini-4-argon-high, gpt-oss-120b-medium): no trailing-turn strip
-          // and no identity rewrite, but empty system parts are rejected the same way.
-          dropEmptyAntigravitySystemParts(rawTransformedRequest);
+        : // Other chat models (gemini-4-argon-high, gpt-oss-120b-medium): no trailing-turn strip,
+          // but empty system parts are rejected the same way.
+          // Fork: they get the identity rewrite too.
+          normalizeAntigravityGeminiSystemInstruction(
+            dropEmptyAntigravitySystemParts(rawTransformedRequest)
+          );
 
     applyAntigravityGenerationDefaults(transformedRequest, upstreamModel);
     // Identity labels join (never replace) the caller's own labels (#16618).
