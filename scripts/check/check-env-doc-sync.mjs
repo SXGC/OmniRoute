@@ -62,6 +62,9 @@ const IGNORE_FROM_CODE = new Set([
   // scripts/ci/docker-image-complete.mjs (#18749). Lets tests set 0; a CI-script tuning knob
   // with a built-in default, never OmniRoute runtime config.
   "DOCKER_IMAGE_COMPLETE_RETRY_DELAY_MS",
+  // Fork: fork-only Antigravity systemInstruction override, documented in
+  // .fork/notes/open-sse/translator/request/openai-to-gemini.ts.md, not in upstream docs.
+  "OMNIROUTE_ANTIGRAVITY_DEFAULT_SYSTEM",
   // Agent environment / system execution paths.
   "PROJECT_ROOT",
   "ARTIFACTS_DIR",

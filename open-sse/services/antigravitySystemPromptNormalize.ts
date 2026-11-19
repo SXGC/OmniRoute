@@ -1,10 +1,11 @@
 /**
- * Fork-owned: Antigravity systemInstruction normalization (competing-agent identity strip +
- * harness-marker rewrite), moved out of open-sse/executors/antigravity.ts so the
+ * Fork-owned: Antigravity systemInstruction text (OMNIROUTE_ANTIGRAVITY_DEFAULT_SYSTEM override)
+ * and its normalization (competing-agent identity strip + harness-marker rewrite), moved out of open-sse/executors/antigravity.ts so the
  * OpenAI -> Antigravity translator can apply it to client system parts before relocating
  * them into contents[0] (#9030). See .fork/notes/open-sse/executors/antigravity.ts.md and
  * .fork/notes/open-sse/translator/request/openai-to-gemini.ts.md.
  */
+import { ANTIGRAVITY_DEFAULT_SYSTEM } from "../config/constants.ts";
 import { logger } from "../utils/logger.ts";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -105,4 +106,14 @@ export function normalizeAntigravityClientSystemParts<T>(parts: T[]): T[] {
   const normalized = normalizeAntigravitySystemInstruction({ parts }) as { parts: T[] } | undefined;
   if (!normalized) return [];
   return normalized.parts.filter((part) => (asRecord(part)?.text as unknown) !== "");
+}
+
+/**
+ * systemInstruction text the OpenAI/Claude -> Antigravity translator sends.
+ * OMNIROUTE_ANTIGRAVITY_DEFAULT_SYSTEM replaces the built-in ANTIGRAVITY_DEFAULT_SYSTEM;
+ * unset or blank keeps the default. Read on every call, never cached at import.
+ */
+export function getAntigravityDefaultSystem(): string {
+  const override = process.env.OMNIROUTE_ANTIGRAVITY_DEFAULT_SYSTEM;
+  return override && override.trim() ? override : ANTIGRAVITY_DEFAULT_SYSTEM;
 }
