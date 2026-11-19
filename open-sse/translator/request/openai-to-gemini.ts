@@ -1,7 +1,9 @@
 import { register } from "../registry.ts";
 import { FORMATS } from "../formats.ts";
-import { ANTIGRAVITY_DEFAULT_SYSTEM } from "../../config/constants.ts";
-import { normalizeAntigravityClientSystemParts } from "../../services/antigravitySystemPromptNormalize.ts";
+import {
+  getAntigravityDefaultSystem,
+  normalizeAntigravityClientSystemParts,
+} from "../../services/antigravitySystemPromptNormalize.ts";
 import {
   buildGeminiThoughtSignatureKey,
   resolveGeminiThoughtSignature,
@@ -932,7 +934,8 @@ function wrapInCloudCodeEnvelope(model, cloudCodeRequest, credentials = null) {
   // with 429 RESOURCE_EXHAUSTED. Keep only the lightweight ANTIGRAVITY_DEFAULT_SYSTEM
   // in systemInstruction and relocate any client system content (which can be very
   // large — Hermes ~125k tokens) to the first user message.
-  const defaultPart: GeminiPart = { text: ANTIGRAVITY_DEFAULT_SYSTEM };
+  // Fork: OMNIROUTE_ANTIGRAVITY_DEFAULT_SYSTEM can replace the default text.
+  const defaultPart: GeminiPart = { text: getAntigravityDefaultSystem() };
   // Fork: relocated client system parts get the same identity strip as systemInstruction.
   const clientParts = normalizeAntigravityClientSystemParts(
     envelope.request.systemInstruction?.parts?.slice() ?? []
