@@ -1,5 +1,5 @@
 {
-  "seamBudget": 35,
+  "seamBudget": 36,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -205,13 +205,19 @@
       "path": "open-sse/executors/antigravity.ts",
       "kind": "B",
       "status": "claimed",
-      "reason": "Strip Codex CLI and DeepSeek Harness identity banners and apply the systemInstruction identity rewrite to Gemini 4 and other non-Claude Antigravity chat models."
+      "reason": "Strip Codex CLI and DeepSeek Harness identity banners, apply the systemInstruction identity rewrite to Gemini 4 and other non-Claude Antigravity chat models, and import that normalization from a fork-owned module."
     },
     {
       "path": "tests/unit/antigravity-empty-system-parts.test.ts",
       "kind": "B",
       "status": "claimed",
       "reason": "Assert the fork behavior that Gemini 4 and other non-Claude Antigravity chat models also get the systemInstruction identity rewrite."
+    },
+    {
+      "path": "open-sse/translator/request/openai-to-gemini.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Apply the Antigravity identity strip to client system parts before they are relocated into the first user turn."
     }
   ]
 }
