@@ -1025,7 +1025,10 @@ export function createSSEStream(options: StreamOptions = {}) {
     const changed =
       !hasPriorInputForTrailingUsage(payload, usage) &&
       sanitizeUsagePayloadForRequest(payload as UsageLike, body, clientResponseFormat);
-    return repairClaudeFinalWireUsage(payload, getAccountingUsage()) || changed;
+    const repaired =
+      (payload as { type?: unknown } | null)?.type === "message_delta" &&
+      repairClaudeFinalWireUsage(payload, getAccountingUsage());
+    return repaired || changed;
   };
   // Passthrough: accumulate content and reasoning separately for call log response body
   let passthroughAccumulatedContent = "";

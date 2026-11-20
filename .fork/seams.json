@@ -1,5 +1,5 @@
 {
-  "seamBudget": 37,
+  "seamBudget": 38,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -224,6 +224,12 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Exempt the fork-only OMNIROUTE_ANTIGRAVITY_DEFAULT_SYSTEM variable, documented in fork notes instead of upstream env docs."
+    },
+    {
+      "path": "open-sse/utils/stream.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Evaluate getAccountingUsage() lazily inside sanitizePassthroughUsage only on Claude message_delta events instead of re-estimating request body tokens on every passthrough SSE delta chunk."
     }
   ]
 }
