@@ -5,15 +5,21 @@ import {
   type CallLogArtifact,
   type CallLogArtifactWriteResult,
 } from "./callLogArtifacts.ts";
+import {
+  protectArtifactForWorker,
+  type CallLogArtifactProtection,
+} from "./callLogPayloadProtectionCore.ts";
 
 type WriteRequest = {
   id: number;
   artifact: CallLogArtifact;
+  protection?: CallLogArtifactProtection;
   environment: {
     pipelineMaxSizeKb?: string;
     chatDebugFile?: string;
     appLogLevel?: string;
     dataDir?: string;
+    providerSafetyStopsTerminal?: string;
   };
 };
 
@@ -30,6 +36,7 @@ function applyWriteEnvironment(environment: WriteRequest["environment"]): void {
     // The worker resolves its paths lazily like the parent; pin it to the
     // parent's resolved dir so both executors share one target.
     DATA_DIR: environment.dataDir,
+    PROVIDER_SAFETY_STOPS_TERMINAL: environment.providerSafetyStopsTerminal,
   };
   for (const [name, value] of Object.entries(values)) {
     if (value === undefined) delete process.env[name];
@@ -46,7 +53,10 @@ parentPort?.on("message", (request: WriteRequest) => {
     applyWriteEnvironment(request.environment);
     // writeCallArtifact's legacy error includes filesystem paths. Keep worker failures generic.
     console.error = () => {};
-    result = writeCallArtifact(request.artifact);
+    const artifact = request.protection
+      ? protectArtifactForWorker(request.artifact, request.protection)
+      : request.artifact;
+    result = writeCallArtifact(artifact);
   } catch {
     result = null;
   } finally {
