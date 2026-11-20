@@ -1,5 +1,5 @@
 {
-  "seamBudget": 44,
+  "seamBudget": 45,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -266,6 +266,12 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Assert PIIMaskerGuardrail returns null meta without scanning when PII_REDACTION_ENABLED is off."
+    },
+    {
+      "path": "next.config.mjs",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Disable experimental.turbopackFileSystemCacheForBuild so Docker Turbopack builds skip 40-140s SST write and compaction overhead."
     }
   ]
 }
