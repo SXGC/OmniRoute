@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 # Build the fork's OmniRoute image and push it to Aliyun ACR.
 #
-# Builds the Dockerfile's default (last) stage, runner-cli, as omniroute:latest,
-# tags it for ACR, pushes it, and checks that the remote digest matches the
-# local image. Only the `latest` tag is pushed (AGENTS.md -> Fork image publishing).
+# Builds the lean `runner-base` stage (no bundled AI CLIs, Playwright, or
+# Docker clients) as omniroute:latest, tags it for ACR, pushes it, and checks
+# that the remote digest matches the local image. Only the `latest` tag is
+# pushed (AGENTS.md -> Fork image publishing).
 #
 # Usage:
 #   scripts/docker/build-push-acr.sh            # build + push + verify
 #   scripts/docker/build-push-acr.sh --no-push  # build only
 #
 # Env overrides (defaults in parentheses):
+#   DOCKER_TARGET              Dockerfile target stage (runner-base; set
+#                              runner-cli to include bundled CLIs & docker.io)
 #   APT_MIRROR                 Debian mirror for apt (http://mirrors.aliyun.com)
+#   OMNIROUTE_USE_TURBOPACK    Use Turbopack for `next build` (1; set 0 for
+#                              webpack on memory-tight hosts)
+#   OMNIROUTE_WEBPACK_BUILD_CACHE
+#                              Keep persistent webpack cache across builds when
+#                              webpack is selected (1)
 #   OMNIROUTE_BUILD_WORKERS    Next.js page-data processes; workers = N-1 (6).
 #                              Each Next process peaks at ~4.5 GB RSS, so keep
 #                              N * 4.5 GB well under free memory.
@@ -24,7 +32,10 @@
 
 set -euo pipefail
 
+DOCKER_TARGET="${DOCKER_TARGET:-runner-base}"
 APT_MIRROR="${APT_MIRROR:-http://mirrors.aliyun.com}"
+OMNIROUTE_USE_TURBOPACK="${OMNIROUTE_USE_TURBOPACK:-1}"
+OMNIROUTE_WEBPACK_BUILD_CACHE="${OMNIROUTE_WEBPACK_BUILD_CACHE:-1}"
 OMNIROUTE_BUILD_WORKERS="${OMNIROUTE_BUILD_WORKERS:-6}"
 NPM_REGISTRY="${NPM_REGISTRY:-}"
 ACR_IMAGE="${ACR_IMAGE:-registry.cn-hangzhou.aliyuncs.com/jct_image/omniroute:latest}"
@@ -35,7 +46,7 @@ for arg in "$@"; do
   case "$arg" in
     --no-push) PUSH=0 ;;
     -h | --help)
-      sed -n '2,24p' "$0"
+      sed -n '2,31p' "$0"
       exit 0
       ;;
     *)
@@ -55,15 +66,18 @@ if ! docker buildx version >/dev/null 2>&1; then
 fi
 
 build_args=(
+  --target "${DOCKER_TARGET}"
   --build-arg "APT_MIRROR=${APT_MIRROR}"
+  --build-arg "OMNIROUTE_USE_TURBOPACK=${OMNIROUTE_USE_TURBOPACK}"
+  --build-arg "OMNIROUTE_WEBPACK_BUILD_CACHE=${OMNIROUTE_WEBPACK_BUILD_CACHE}"
   --build-arg "OMNIROUTE_BUILD_WORKERS=${OMNIROUTE_BUILD_WORKERS}"
 )
 if [ -n "$NPM_REGISTRY" ]; then
   build_args+=(--build-arg "NPM_REGISTRY=${NPM_REGISTRY}")
 fi
 
-echo "==> building ${LOCAL_IMAGE} from $(git rev-parse --short HEAD)"
-echo "    APT_MIRROR=${APT_MIRROR} OMNIROUTE_BUILD_WORKERS=${OMNIROUTE_BUILD_WORKERS}"
+echo "==> building ${LOCAL_IMAGE} (target=${DOCKER_TARGET}) from $(git rev-parse --short HEAD)"
+echo "    APT_MIRROR=${APT_MIRROR} OMNIROUTE_USE_TURBOPACK=${OMNIROUTE_USE_TURBOPACK} OMNIROUTE_WEBPACK_BUILD_CACHE=${OMNIROUTE_WEBPACK_BUILD_CACHE} OMNIROUTE_BUILD_WORKERS=${OMNIROUTE_BUILD_WORKERS}"
 # shellcheck disable=SC2086 # EXTRA_BUILD_ARGS is intentionally word-split
 DOCKER_BUILDKIT=1 docker build --progress=plain "${build_args[@]}" ${EXTRA_BUILD_ARGS:-} \
   -t "$LOCAL_IMAGE" .
