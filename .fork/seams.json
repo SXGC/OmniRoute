@@ -1,5 +1,5 @@
 {
-  "seamBudget": 40,
+  "seamBudget": 44,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -229,7 +229,7 @@
       "path": "open-sse/utils/stream.ts",
       "kind": "D",
       "status": "claimed",
-      "reason": "Evaluate getAccountingUsage() lazily inside sanitizePassthroughUsage only on Claude message_delta events instead of re-estimating request body tokens on every passthrough SSE delta chunk."
+      "reason": "Evaluate getAccountingUsage() lazily on Claude message_delta events and only invoke nativeClaudeUsage.getUsage() when native Claude stream events were observed, avoiding wasted request-body token estimation on non-Claude streams."
     },
     {
       "path": "src/lib/usage/callLogArtifactWorker.ts",
@@ -242,6 +242,30 @@
       "kind": "B",
       "status": "claimed",
       "reason": "Pass optional payload protection flags and PROVIDER_SAFETY_STOPS_TERMINAL snapshot to callLogArtifactWorker, and isolate DataCloneError per item with a JSON-safe fallback."
+    },
+    {
+      "path": "open-sse/utils/usageEstimation.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Replace regex match/replace/split/filter allocations in estimateTokenCount with a zero-allocation single-pass character loop to eliminate multi-hundred-ms stalls and GC pressure on large prompts."
+    },
+    {
+      "path": "src/lib/guardrails/piiMasker.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Short-circuit PIIMaskerGuardrail.preCall when PII_REDACTION_ENABLED is off and postCall when PII_RESPONSE_SANITIZATION is off instead of scanning full request/response trees with international PII regexes on every call."
+    },
+    {
+      "path": "tests/unit/pii-masker-copy-on-write.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Assert PIIMaskerGuardrail returns null meta without scanning when PII_REDACTION_ENABLED is off."
+    },
+    {
+      "path": "tests/unit/characterization-guardrails.test.ts",
+      "kind": "D",
+      "status": "claimed",
+      "reason": "Assert PIIMaskerGuardrail returns null meta without scanning when PII_REDACTION_ENABLED is off."
     }
   ]
 }

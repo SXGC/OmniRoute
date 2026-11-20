@@ -1009,16 +1009,19 @@ export function createSSEStream(options: StreamOptions = {}) {
     providerPayloadCollector.push(payload);
   };
   // Accounting uses native receipt evidence rather than a client projection.
-  const getAccountingUsage = (): UsageLike | null =>
-    resolveStreamAccountingUsage({
+  const getAccountingUsage = (): UsageLike | null => {
+    const native = nativeContent.hasObserved();
+    const contentLength = observedContentLength();
+    return resolveStreamAccountingUsage({
       usage: state?.usage ?? usage,
-      native: nativeContent.hasObserved(),
-      nativeUsage: nativeClaudeUsage.getUsage(observedContentLength()),
+      native,
+      nativeUsage: native ? nativeClaudeUsage.getUsage(contentLength) : null,
       body,
-      contentLength: observedContentLength(),
+      contentLength,
       format:
         mode === STREAM_MODE.PASSTHROUGH ? clientResponseFormat || FORMATS.OPENAI : targetFormat,
     });
+  };
   const getClientUsage = () =>
     projectStreamingClientUsage(getAccountingUsage(), targetFormat, sourceFormat);
   const sanitizePassthroughUsage = (payload: unknown) => {
