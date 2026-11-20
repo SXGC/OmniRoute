@@ -212,6 +212,9 @@ const nextConfig = {
     webpackMemoryOptimizations: true,
     // Run webpack in a separate Node worker, lowering main-process memory.
     webpackBuildWorker: true,
+    // Disable Turbopack persistent build filesystem cache to avoid 40-140s
+    // SST write + database compaction stalls on Docker cache mounts.
+    turbopackFileSystemCacheForBuild: false,
     // Next.js proxy (middleware) has a default 10MB body clone limit. File
     // uploads (OpenAI-compatible /v1/files) routinely exceed this. Match the
     // 512 MB server-side cap; tune via env if needed.
