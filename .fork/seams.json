@@ -241,7 +241,7 @@
       "path": "src/lib/usage/callLogArtifactWriter.ts",
       "kind": "B",
       "status": "claimed",
-      "reason": "Pass optional payload protection flags and PROVIDER_SAFETY_STOPS_TERMINAL snapshot to callLogArtifactWorker, and isolate DataCloneError per item with a JSON-safe fallback."
+      "reason": "Pass optional payload protection flags and PROVIDER_SAFETY_STOPS_TERMINAL snapshot to callLogArtifactWorker, isolate DataCloneError per item with a JSON-safe fallback, and keep the unref'd worker warm across idle periods."
     },
     {
       "path": "open-sse/utils/usageEstimation.ts",

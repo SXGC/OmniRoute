@@ -397,3 +397,10 @@ test("DataCloneError on one raw payload degrades via protected JSON fallback wit
   assert.equal(firstDisk.requestBody.keep, "yes");
   assert.equal("fn" in firstDisk.requestBody, false);
 });
+
+test("idle call-log worker stays warm (unref'd without idle termination timer)", () => {
+  const source = fs.readFileSync("src/lib/usage/callLogArtifactWriter.ts", "utf8");
+  assert.match(source, /worker\.unref\(\)/);
+  assert.doesNotMatch(source, /setTimeout\(terminateWorker/);
+  assert.doesNotMatch(source, /IDLE_TIMEOUT_MS/);
+});
