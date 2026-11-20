@@ -1,5 +1,5 @@
 {
-  "seamBudget": 38,
+  "seamBudget": 40,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -67,7 +67,7 @@
       "path": "src/lib/usage/callLogs.ts",
       "kind": "B",
       "status": "claimed",
-      "reason": "Persist and return the upstream-declared response model on call logs."
+      "reason": "Persist and return the upstream-declared response model on call logs, and offload pure payload protection (when PII sanitization is disabled) to callLogArtifactWorker."
     },
     {
       "path": "open-sse/handlers/chatCore/attemptLogging.ts",
@@ -230,6 +230,18 @@
       "kind": "D",
       "status": "claimed",
       "reason": "Evaluate getAccountingUsage() lazily inside sanitizePassthroughUsage only on Claude message_delta events instead of re-estimating request body tokens on every passthrough SSE delta chunk."
+    },
+    {
+      "path": "src/lib/usage/callLogArtifactWorker.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Run optional pure single-pass call-log payload protection inside the worker thread before writing the artifact, mirroring PROVIDER_SAFETY_STOPS_TERMINAL."
+    },
+    {
+      "path": "src/lib/usage/callLogArtifactWriter.ts",
+      "kind": "B",
+      "status": "claimed",
+      "reason": "Pass optional payload protection flags and PROVIDER_SAFETY_STOPS_TERMINAL snapshot to callLogArtifactWorker, and isolate DataCloneError per item with a JSON-safe fallback."
     }
   ]
 }

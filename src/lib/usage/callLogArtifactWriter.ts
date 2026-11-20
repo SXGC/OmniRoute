@@ -4,8 +4,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 
 import { resolveWritableDataDir } from "../dataPaths";
+import { isProviderSafetyStopsEnabled } from "../../../open-sse/utils/providerSafety.ts";
 
 import type { CallLogArtifact, CallLogArtifactWriteResult } from "./callLogArtifacts.ts";
+import {
+  protectArtifactForWorker,
+  type CallLogArtifactProtection,
+} from "./callLogPayloadProtectionCore.ts";
 
 const MAX_QUEUED_JOBS = 128;
 const IDLE_TIMEOUT_MS = 30_000;
@@ -20,11 +25,13 @@ type WorkerReply = {
 type QueueItem = {
   id: number;
   artifact: CallLogArtifact;
+  protection?: CallLogArtifactProtection;
   environment: {
     pipelineMaxSizeKb?: string;
     chatDebugFile?: string;
     appLogLevel?: string;
     dataDir?: string;
+    providerSafetyStopsTerminal?: string;
   };
   resolve: (result: CallLogArtifactWriteResult | null) => void;
 };
@@ -179,6 +186,21 @@ function ensureWorker(): Worker {
   return created;
 }
 
+function isDataCloneError(err: unknown): boolean {
+  return err instanceof Error && err.name === "DataCloneError";
+}
+
+function toCloneSafeProtectedArtifact(item: QueueItem): CallLogArtifact | null {
+  try {
+    const protectedArtifact = item.protection
+      ? protectArtifactForWorker(item.artifact, item.protection)
+      : item.artifact;
+    return JSON.parse(JSON.stringify(protectedArtifact)) as CallLogArtifact;
+  } catch {
+    return null;
+  }
+}
+
 function pump(): void {
   if (active) return;
   const next = queue.shift();
@@ -190,22 +212,56 @@ function pump(): void {
 
   active = next;
   clearIdleTimer();
+  let current: Worker;
   try {
-    const current = ensureWorker();
+    current = ensureWorker();
     // Hold the process open until this write's reply arrives, even if the worker was idle.
     current.ref();
+  } catch (err) {
+    failOpen(true, err);
+    return;
+  }
+
+  try {
     current.postMessage({
       id: next.id,
       artifact: next.artifact,
+      ...(next.protection ? { protection: next.protection } : {}),
       environment: next.environment,
     });
   } catch (err) {
+    if (isDataCloneError(err)) {
+      const fallback = toCloneSafeProtectedArtifact(next);
+      if (fallback) {
+        try {
+          current.postMessage({
+            id: next.id,
+            artifact: fallback,
+            environment: next.environment,
+          });
+          return;
+        } catch (retryErr) {
+          if (!isDataCloneError(retryErr)) {
+            failOpen(true, retryErr);
+            return;
+          }
+        }
+      }
+      warnRateLimited(
+        `[callLogs] Call-log artifact payload uncloneable: ${describeFailureDetail(err)}`
+      );
+      active = null;
+      next.resolve(null);
+      pump();
+      return;
+    }
     failOpen(true, err);
   }
 }
 
 export function writeCallArtifactAsync(
-  artifact: CallLogArtifact
+  artifact: CallLogArtifact,
+  protection?: CallLogArtifactProtection
 ): Promise<CallLogArtifactWriteResult | null> {
   if (closing || queue.length >= MAX_QUEUED_JOBS) {
     warnRateLimited("[callLogs] Call-log artifact queue unavailable; detail omitted.");
@@ -213,15 +269,17 @@ export function writeCallArtifactAsync(
   }
 
   return new Promise((resolve) => {
-    const item = {
+    const item: QueueItem = {
       id: nextId++,
       artifact,
+      ...(protection ? { protection } : {}),
       environment: {
         pipelineMaxSizeKb: process.env.CALL_LOG_PIPELINE_MAX_SIZE_KB,
         chatDebugFile: process.env.CHAT_DEBUG_FILE,
         appLogLevel: process.env.APP_LOG_LEVEL,
         // Resolved, not raw: a redirected parent has no DATA_DIR in its env.
         dataDir: resolveWritableDataDir(),
+        providerSafetyStopsTerminal: isProviderSafetyStopsEnabled() ? "true" : undefined,
       },
       resolve,
     };

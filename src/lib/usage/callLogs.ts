@@ -47,12 +47,18 @@ import {
   resolveUsageProvenance,
 } from "./callContentProvenance";
 import { isNoLog } from "../compliance/noLog";
+import { isPiiSanitizationEnabled } from "../piiSanitizer";
 import {
   parseStoredPayload,
   protectErrorPayloadForLog,
   protectPayloadForLog,
   protectRequestBodyForLog,
 } from "../logPayloads";
+import {
+  hasProtectablePayload,
+  hasProtectablePipelinePayloads,
+  type CallLogArtifactProtection,
+} from "./callLogPayloadProtectionCore";
 import { pickDisplayValue } from "@/shared/utils/maskEmail";
 import {
   getCallLogsDir,
@@ -560,6 +566,7 @@ type PreparedCallLogRow = {
   hasResilienceColumn: boolean;
   /** Builds the artifact from the row's FINAL id; null when no detail is expected. */
   buildDetailArtifact: (() => ReturnType<typeof buildArtifact>) | null;
+  detailArtifactProtection?: CallLogArtifactProtection;
 };
 
 function logCallLogSaveFailure(error: unknown): void {
@@ -586,21 +593,29 @@ async function buildCallLogRow(entry: any, metadataOnly = false): Promise<Prepar
     ? (entry.connectionId ?? null)
     : entry.connectionId || apiKeyContext?.connectionId || null;
   const noLogEnabled = Boolean(entry.noLog) || (apiKeyId ? isNoLog(apiKeyId) : false);
-
-  const protectedRequestBody = noLogEnabled ? null : protectRequestBodyForLog(entry.requestBody);
+  const piiSanitizationEnabled = isPiiSanitizationEnabled();
+  const rawPipelinePayloads = entry.pipelinePayloads ?? entry.pipeline ?? null;
   const responseStatus = Number(entry.status);
   const failedResponse = Number.isFinite(responseStatus) && responseStatus >= 400;
-  const protectedResponseBody = noLogEnabled
-    ? null
-    : failedResponse
+  const needsSyncRequestBody =
+    !noLogEnabled && (piiSanitizationEnabled || entry.requestType === "search");
+  const needsSyncResponseBody = !noLogEnabled && piiSanitizationEnabled;
+  const needsSyncPipelinePayloads =
+    !noLogEnabled &&
+    (piiSanitizationEnabled ||
+      (!metadataOnly && typeof entry.responseId === "string" && entry.responseId.length > 0));
+
+  const protectedRequestBody = needsSyncRequestBody
+    ? protectRequestBodyForLog(entry.requestBody)
+    : null;
+  const protectedResponseBody = needsSyncResponseBody
+    ? failedResponse
       ? protectErrorPayloadForLog(entry.responseBody)
-      : protectPayloadForLog(entry.responseBody);
-  const protectedPipelinePayloads = noLogEnabled
-    ? null
-    : protectPipelinePayloads(
-        entry.pipelinePayloads ?? entry.pipeline ?? null,
-        failedResponse ? responseStatus : undefined
-      );
+      : protectPayloadForLog(entry.responseBody)
+    : null;
+  const protectedPipelinePayloads = needsSyncPipelinePayloads
+    ? protectPipelinePayloads(rawPipelinePayloads, failedResponse ? responseStatus : undefined)
+    : null;
   const protectedError = sanitizeErrorForLog(entry.error);
 
   // Bridges the window before this row's own artifact write (queued below,
@@ -812,13 +827,28 @@ async function buildCallLogRow(entry: any, metadataOnly = false): Promise<Prepar
     : upstreamHttp
       ? JSON.stringify({ ...(legacySummary ? JSON.parse(legacySummary) : {}), upstreamHttp })
       : legacySummary;
+  const hasRequestBodyValue = noLogEnabled
+    ? false
+    : needsSyncRequestBody
+      ? protectedRequestBody !== null
+      : hasProtectablePayload(entry.requestBody);
+  const hasResponseBodyValue = noLogEnabled
+    ? false
+    : needsSyncResponseBody
+      ? protectedResponseBody !== null
+      : hasProtectablePayload(entry.responseBody);
+  const hasPipelineDetailsValue = noLogEnabled
+    ? false
+    : needsSyncPipelinePayloads
+      ? protectedPipelinePayloads !== null
+      : hasProtectablePipelinePayloads(rawPipelinePayloads);
   const detailExpected =
     !metadataOnly &&
     !noLogEnabled &&
-    (protectedRequestBody !== null ||
-      protectedResponseBody !== null ||
+    (hasRequestBodyValue ||
+      hasResponseBodyValue ||
       protectedError !== null ||
-      protectedPipelinePayloads !== null);
+      hasPipelineDetailsValue);
 
   // The row is inserted BEFORE its artifact is written: the artifact path is
   // derived from (timestamp, id), so the id must be final — i.e. accepted by
@@ -838,12 +868,40 @@ async function buildCallLogRow(entry: any, metadataOnly = false): Promise<Prepar
     artifactRelPath: null,
     artifactSizeBytes: null,
     artifactSha256: null,
-    hasRequestBody: protectedRequestBody !== null ? 1 : 0,
-    hasResponseBody: protectedResponseBody !== null ? 1 : 0,
+    hasRequestBody: hasRequestBodyValue ? 1 : 0,
+    hasResponseBody: hasResponseBodyValue ? 1 : 0,
     resilienceActions,
-    hasPipelineDetails: protectedPipelinePayloads ? 1 : 0,
+    hasPipelineDetails: hasPipelineDetailsValue ? 1 : 0,
     requestSummary,
   };
+  const artifactRequestBody = needsSyncRequestBody
+    ? protectedRequestBody
+    : hasRequestBodyValue
+      ? entry.requestBody
+      : null;
+  const artifactResponseBody = needsSyncResponseBody
+    ? protectedResponseBody
+    : hasResponseBodyValue
+      ? entry.responseBody
+      : null;
+  const artifactPipelinePayloads = needsSyncPipelinePayloads
+    ? protectedPipelinePayloads
+    : hasPipelineDetailsValue
+      ? rawPipelinePayloads
+      : null;
+  const detailArtifactProtection: CallLogArtifactProtection | undefined =
+    detailExpected &&
+    ((!needsSyncRequestBody && hasRequestBodyValue) ||
+      (!needsSyncResponseBody && hasResponseBodyValue) ||
+      (!needsSyncPipelinePayloads && hasPipelineDetailsValue))
+      ? {
+          protectRequestBody: !needsSyncRequestBody && hasRequestBodyValue,
+          protectResponseBody: !needsSyncResponseBody && hasResponseBodyValue,
+          protectPipelinePayloads: !needsSyncPipelinePayloads && hasPipelineDetailsValue,
+          failedResponse,
+          responseStatus: failedResponse ? responseStatus : undefined,
+        }
+      : undefined;
   return {
     metadataOnly,
     db,
@@ -854,12 +912,13 @@ async function buildCallLogRow(entry: any, metadataOnly = false): Promise<Prepar
       ? () =>
           buildArtifact(
             logEntry,
-            protectedRequestBody,
-            protectedResponseBody,
+            artifactRequestBody,
+            artifactResponseBody,
             protectedError,
-            protectedPipelinePayloads
+            artifactPipelinePayloads as RequestPipelinePayloads | null
           )
       : null,
+    detailArtifactProtection,
   };
 }
 
@@ -932,7 +991,7 @@ async function publishCallLogDetail(prepared: PreparedCallLogRow): Promise<void>
     try {
       // A skipped write ends like a failed one: detail_state "missing" (see finally below).
       const artifactResult = hasRoomForCallLogArtifact()
-        ? await writeCallArtifactAsync(buildDetailArtifact())
+        ? await writeCallArtifactAsync(buildDetailArtifact(), prepared.detailArtifactProtection)
         : null;
       if (artifactResult) publishPendingCallLogDetail(db, id, artifactResult);
     } finally {
