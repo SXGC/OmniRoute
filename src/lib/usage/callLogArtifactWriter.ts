@@ -13,7 +13,6 @@ import {
 } from "./callLogPayloadProtectionCore.ts";
 
 const MAX_QUEUED_JOBS = 128;
-const IDLE_TIMEOUT_MS = 30_000;
 const CLOSE_TIMEOUT_MS = 2_000;
 const WARNING_INTERVAL_MS = 30_000;
 
@@ -40,7 +39,6 @@ let worker: Worker | null = null;
 let active: QueueItem | null = null;
 const queue: QueueItem[] = [];
 let nextId = 1;
-let idleTimer: NodeJS.Timeout | null = null;
 let closing = false;
 let closeWaiters: Array<() => void> = [];
 let lastWarningAt = 0;
@@ -93,16 +91,9 @@ export function resolveCallLogArtifactWorker(context: WorkerResolutionContext = 
   return { workerFile: entryJs ?? cwdJs, execArgv: [] };
 }
 
-function clearIdleTimer(): void {
-  if (!idleTimer) return;
-  clearTimeout(idleTimer);
-  idleTimer = null;
-}
-
 function terminateWorker(): void {
   const current = worker;
   worker = null;
-  clearIdleTimer();
   if (current) void current.terminate().catch(() => {});
 }
 
@@ -113,14 +104,11 @@ function notifyCloseWaiters(): void {
   for (const resolve of waiters) resolve();
 }
 
-function scheduleIdleTermination(): void {
-  clearIdleTimer();
+function parkIdleWorker(): void {
   if (!worker || active || queue.length > 0) return;
-  // An idle worker must not keep the process alive for IDLE_TIMEOUT_MS after its last write
-  // (a CLI or test process would otherwise linger 30 s). pump() refs it again for the next write.
+  // Keep the worker warm across idle periods to avoid V8 isolate cold-start CPU spikes,
+  // while unref'ing it so CLI/test processes still exit immediately when no write is in flight.
   worker.unref();
-  idleTimer = setTimeout(terminateWorker, IDLE_TIMEOUT_MS);
-  idleTimer.unref?.();
 }
 
 function warnRateLimited(message: string): void {
@@ -206,12 +194,11 @@ function pump(): void {
   const next = queue.shift();
   if (!next) {
     notifyCloseWaiters();
-    scheduleIdleTermination();
+    parkIdleWorker();
     return;
   }
 
   active = next;
-  clearIdleTimer();
   let current: Worker;
   try {
     current = ensureWorker();
