@@ -1,6 +1,6 @@
 import { BaseGuardrail, type GuardrailContext, type GuardrailResult } from "./base";
 import { processPII } from "@/shared/utils/inputSanitizer";
-import { sanitizePII, sanitizePIIResponse } from "@/lib/piiSanitizer";
+import { isPiiSanitizationEnabled, sanitizePII, sanitizePIIResponse } from "@/lib/piiSanitizer";
 import { getPiiRuleConfig } from "@/lib/pii/piiRuleConfig";
 import { recordPiiDetections } from "@/lib/pii/piiDetectionStats";
 
@@ -107,6 +107,9 @@ function cloneAndMaskRequestPayload(payload: unknown, tokenize?: Tokenize) {
   // below rebuilds the containers it touches, so the caller's body is never
   // mutated without paying for a JSON round trip of the whole request up front.
   const redact = isRequestPiiMaskingEnabled();
+  if (!redact) {
+    return { detections: [] as PiiDetection[], modified: false, payload };
+  }
   const clonedPayload: JsonRecord = { ...(payload as JsonRecord) };
   const detections: PiiDetection[] = [];
   let modified = false;
@@ -260,7 +263,12 @@ export class PIIMaskerGuardrail extends BaseGuardrail {
   }
 
   async postCall(response: unknown, _context: GuardrailContext): Promise<GuardrailResult<unknown>> {
-    if (!response || typeof response !== "object" || Array.isArray(response)) {
+    if (
+      !isPiiSanitizationEnabled() ||
+      !response ||
+      typeof response !== "object" ||
+      Array.isArray(response)
+    ) {
       return { block: false };
     }
 

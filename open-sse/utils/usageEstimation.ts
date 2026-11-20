@@ -1,8 +1,21 @@
 // Heuristic token estimation constants
 const CHARS_PER_TOKEN_SCHEMA = 6; // ~6 chars/token for JSON schemas (more verbose per token)
 
+function isWordChar(code: number): boolean {
+  return (
+    (code >= 48 && code <= 57) || // 0-9
+    (code >= 65 && code <= 90) || // A-Z
+    (code >= 97 && code <= 122) || // a-z
+    code === 95 // _
+  );
+}
+
+function isWhitespaceCode(code: number): boolean {
+  return code === 32 || (code >= 9 && code <= 13) || code === 160 || code === 0xfeff;
+}
+
 /**
- * Improved token estimation heuristic (no dependency).
+ * Improved token estimation heuristic (no dependency, zero-allocation single pass).
  * Splits text on common token boundaries (whitespace, punctuation, camelCase)
  * and applies a sub-word correction factor. Better accuracy for:
  * - English text (~4 chars/token)
@@ -15,23 +28,60 @@ const CHARS_PER_TOKEN_SCHEMA = 6; // ~6 chars/token for JSON schemas (more verbo
 function estimateTokenCount(text: unknown) {
   if (!text || typeof text !== "string") return 0;
 
-  // Count CJK ideographs separately — each is roughly 1 token
-  const cjkMatches = text.match(/[\u3000-\u9fff\uf900-\ufaff\u{20000}-\u{2fa1f}]/gu);
-  const cjkCount = cjkMatches ? cjkMatches.length : 0;
+  let cjkCount = 0;
+  let nonCjkTokens = 0;
+  let inWord = false;
+  let prevLower = false;
 
-  // Remove CJK chars for the remaining estimation
-  const nonCJK = text.replace(/[\u3000-\u9fff\uf900-\ufaff]/g, " ");
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
 
-  // Split on token boundaries: whitespace, punctuation, camelCase transitions
-  const tokens = nonCJK
-    .split(/(\s+|[^\w\s]|(?<=[a-z])(?=[A-Z]))/)
-    .filter((t) => t && t.trim().length > 0);
+    if (code >= 0xd800 && code <= 0xdbff && i + 1 < text.length) {
+      const low = text.charCodeAt(i + 1);
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        const cp = ((code - 0xd800) << 10) + (low - 0xdc00) + 0x10000;
+        i++;
+        if (cp >= 0x20000 && cp <= 0x2fa1f) {
+          cjkCount++;
+        } else {
+          nonCjkTokens++;
+        }
+        inWord = false;
+        prevLower = false;
+        continue;
+      }
+    }
 
-  // Apply sub-word correction: BPE tokenizers often split long words
-  // into sub-word pieces, so raw token count underestimates slightly
-  const estimatedNonCJK = Math.ceil(tokens.length * 1.3);
+    if ((code >= 0x3000 && code <= 0x9fff) || (code >= 0xf900 && code <= 0xfaff)) {
+      cjkCount++;
+      inWord = false;
+      prevLower = false;
+      continue;
+    }
 
-  return cjkCount + estimatedNonCJK;
+    if (isWhitespaceCode(code)) {
+      inWord = false;
+      prevLower = false;
+      continue;
+    }
+
+    if (isWordChar(code)) {
+      const isUpper = code >= 65 && code <= 90;
+      const isLower = code >= 97 && code <= 122;
+      if (!inWord || (prevLower && isUpper)) {
+        nonCjkTokens++;
+      }
+      inWord = true;
+      prevLower = isLower;
+      continue;
+    }
+
+    nonCjkTokens++;
+    inWord = false;
+    prevLower = false;
+  }
+
+  return cjkCount + Math.ceil(nonCjkTokens * 1.3);
 }
 
 // #20086: callers outside the stream (cursor executor, finalizeStreamingUsage, estimateUsage)
