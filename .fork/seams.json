@@ -1,5 +1,5 @@
 {
-  "seamBudget": 45,
+  "seamBudget": 41,
   "exemptGlobs": [],
   "upstreamDocGlobs": [],
   "seams": [
@@ -166,30 +166,6 @@
       "reason": "Fill the missing-signature validator skip marker on assistant tool-call history for the exact google/gemini-4-argon model so unsigned replay history stops failing with Cloudflare 400 User Input Error."
     },
     {
-      "path": "open-sse/translator/index.ts",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Replay the internal reasoning placeholder on assistant tool-call turns sent to native DeepSeek whose tool-call ids DeepSeek did not issue, so a combo fallback mid tool loop no longer 400s on missing reasoning_content."
-    },
-    {
-      "path": "open-sse/utils/reasoningPlaceholder.ts",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Add hasForeignToolCallsRequiringReasoning(), which flags native-DeepSeek tool-call turns whose ids do not match DeepSeek's call_<2 digits>_ format."
-    },
-    {
-      "path": "tests/unit/reasoning-cache.test.ts",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Use DeepSeek-issued call_00_ tool-call ids in the fixture that tests the DeepSeek-issued path, since foreign ids now get the presence placeholder."
-    },
-    {
-      "path": "tests/unit/tool-request-sanitization.test.ts",
-      "kind": "D",
-      "status": "claimed",
-      "reason": "Use a DeepSeek-issued call_00_ tool-call id in the fixture asserting reasoning_content stays absent, since foreign ids now get the presence placeholder."
-    },
-    {
       "path": ".github/workflows",
       "kind": "B",
       "status": "claimed",
@@ -229,7 +205,7 @@
       "path": "open-sse/utils/stream.ts",
       "kind": "D",
       "status": "claimed",
-      "reason": "Evaluate getAccountingUsage() lazily on Claude message_delta events and only invoke nativeClaudeUsage.getUsage() when native Claude stream events were observed, avoiding wasted request-body token estimation on non-Claude streams."
+      "reason": "Only invoke nativeClaudeUsage.getUsage() in getAccountingUsage() when native Claude stream events were observed, avoiding wasted request-body token estimation on non-Claude streams."
     },
     {
       "path": "src/lib/usage/callLogArtifactWorker.ts",
